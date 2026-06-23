@@ -8,6 +8,6 @@ gemspec
 gem "irb"
 gem "rake", "~> 13.0"
 gem "yard"
-gem "minitest", "~> 5.16"
-
+gem "rspec"
+gem "activesupport"
 gem "rubocop", "~> 1.21"

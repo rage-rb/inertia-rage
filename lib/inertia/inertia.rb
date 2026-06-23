@@ -21,7 +21,7 @@ module Inertia
   #
   # @param key [String, nil] a unique cache key for the prop (auto-generated if `nil`)
   # @param fresh [Boolean] forces re-evaluation when `true`
-  # @param expires_in [Integer, nil] cache expiration time in seconds
+  # @param expires_in [Integer, ActiveSupport::Duration, nil] cache expiration time in seconds
   # @yield the block that returns the prop value when evaluated
   # @return [Props::Once] a once-evaluated prop wrapper
   # @example
