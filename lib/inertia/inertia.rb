@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "rage"
+
 require_relative "props"
 require_relative "request_context"
 require_relative "version"
