@@ -116,6 +116,33 @@ RSpec.describe Inertia::ProtocolBuilder do
       )
     end
 
+    it "includes on-demand props from a closure-returned hash when a sibling path is requested" do
+      page = build_page(
+        {
+          auth: lambda {
+            {
+              user: "Jonathan",
+              permissions: Inertia.optional { ["admin"] },
+              notifications: Inertia.deferred { ["msg"] },
+            }
+          },
+        },
+        {
+          "HTTP_X_INERTIA_PARTIAL_COMPONENT" => "TestComponent",
+          "HTTP_X_INERTIA_PARTIAL_DATA" => "auth.user",
+        },
+      )
+
+      expect(page[:props]).to eq(
+        auth: {
+          user: "Jonathan",
+          permissions: ["admin"],
+          notifications: ["msg"],
+        },
+      )
+      expect(page).not_to have_key(:deferredProps)
+    end
+
     # Adapted from inertia-rails/spec/inertia/rendering_spec.rb
     # "with except props that target transformed data".
     it "does not prune children from a closure-returned hash when except targets one child" do
@@ -446,6 +473,26 @@ RSpec.describe Inertia::ProtocolBuilder do
       expect(page[:props][:permissions]).to eq(["admin"])
     end
 
+    it "does not include optional props for a component-only partial header" do
+      resolved = false
+
+      page = build_page(
+        {
+          user: "Jonathan",
+          permissions: Inertia.optional do
+            resolved = true
+            ["admin"]
+          end,
+        },
+        {
+          "HTTP_X_INERTIA_PARTIAL_COMPONENT" => "TestComponent",
+        },
+      )
+
+      expect(page[:props]).to eq(user: "Jonathan")
+      expect(resolved).to be(false)
+    end
+
     # Adapted from inertia-rails/spec/inertia/rendering_spec.rb
     # "when except without X-Inertia-Partial-Data".
     it "includes optional props on except-only partial reloads unless excepted" do
@@ -483,6 +530,27 @@ RSpec.describe Inertia::ProtocolBuilder do
             resolved = true
             []
           end,
+        },
+      )
+
+      expect(page[:props]).to eq(name: "Jonathan")
+      expect(page[:deferredProps]).to eq("default" => ["notifications"])
+      expect(resolved).to be(false)
+    end
+
+    it "does not resolve deferred props for a component-only partial header" do
+      resolved = false
+
+      page = build_page(
+        {
+          name: "Jonathan",
+          notifications: Inertia.deferred do
+            resolved = true
+            ["msg"]
+          end,
+        },
+        {
+          "HTTP_X_INERTIA_PARTIAL_COMPONENT" => "TestComponent",
         },
       )
 
@@ -700,6 +768,57 @@ RSpec.describe Inertia::ProtocolBuilder do
       expect(page[:onceProps]).to eq(
         "cached_one" => { prop: "cached_one", expiresAt: nil },
       )
+    end
+
+    it "excludes partial-excepted once metadata inside resolved lazy parents" do
+      page = build_page(
+        {
+          dashboard: lambda {
+            {
+              summary: "ready",
+              cached: Inertia.once { "cached data" },
+            }
+          },
+        },
+        {
+          "HTTP_X_INERTIA_PARTIAL_COMPONENT" => "TestComponent",
+          "HTTP_X_INERTIA_PARTIAL_DATA" => "dashboard.summary",
+          "HTTP_X_INERTIA_PARTIAL_EXCEPT" => "dashboard.cached",
+        },
+      )
+
+      expect(page[:props]).to eq(
+        dashboard: {
+          summary: "ready",
+          cached: "cached data",
+        },
+      )
+      expect(page).not_to have_key(:onceProps)
+    end
+
+    it "does not resolve cached once props inside resolved lazy parents unless explicitly requested" do
+      page = build_page(
+        {
+          dashboard: lambda {
+            {
+              summary: "ready",
+              cached: Inertia.once { "cached data" },
+            }
+          },
+        },
+        {
+          "HTTP_X_INERTIA_PARTIAL_COMPONENT" => "TestComponent",
+          "HTTP_X_INERTIA_PARTIAL_DATA" => "dashboard.summary",
+          "HTTP_X_INERTIA_EXCEPT_ONCE_PROPS" => "dashboard.cached",
+        },
+      )
+
+      expect(page[:props]).to eq(
+        dashboard: {
+          summary: "ready",
+        },
+      )
+      expect(page).not_to have_key(:onceProps)
     end
 
     it "excludes once metadata for props excluded by partial except" do
