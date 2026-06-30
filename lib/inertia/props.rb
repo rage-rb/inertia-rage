@@ -5,7 +5,7 @@ module Inertia
   module Props
     # Base class for all prop wrappers.
     class Base < Data
-      def as_json
+      def resolve
         block.call
       end
     end
