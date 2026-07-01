@@ -3,6 +3,7 @@
 require "rage"
 
 require_relative "props"
+require_relative "frontend"
 require_relative "request_context"
 require_relative "protocol_builder"
 require_relative "controller_helpers"
