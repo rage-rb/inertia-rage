@@ -115,6 +115,12 @@ module Inertia
           prop
         end
 
+        # chained props and props returned from lazy props
+        if resolved.is_a?(Inertia::Props::Base)
+          prop = resolved
+          redo
+        end
+
         response[prop_name] = resolved unless resolved.equal?(OMIT)
       end
     end

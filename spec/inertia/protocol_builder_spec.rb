@@ -176,7 +176,7 @@ RSpec.describe Inertia::ProtocolBuilder do
     end
 
     # Adapted from inertia-rails/spec/inertia/props_resolver_spec.rb "closure returning prop type".
-    xit "treats a closure-returned deferred prop as a deferred prop" do
+    it "treats a closure-returned deferred prop as a deferred prop" do
       resolved = false
 
       page = build_page(
@@ -196,7 +196,7 @@ RSpec.describe Inertia::ProtocolBuilder do
     end
 
     # Adapted from inertia-rails/spec/inertia/props_resolver_spec.rb "closure returning prop type".
-    xit "treats a closure-returned once prop as a once prop" do
+    it "treats a closure-returned once prop as a once prop" do
       page = build_page({ locale: -> { Inertia.once { "en" } } })
 
       expect(page[:props][:locale]).to eq("en")
