@@ -4,6 +4,9 @@ module Inertia
   ##
   # Encapsulates request-specific context for Inertia partial reloads.
   class RequestContext
+    EMPTY = [].freeze
+    private_constant :EMPTY
+
     # Creates a new request context.
     #
     # @param request [Rage::Request] the HTTP request object
@@ -64,15 +67,15 @@ module Inertia
     private
 
     def partial_except
-      @partial_except ||= @request.env["HTTP_X_INERTIA_PARTIAL_EXCEPT"]&.split(",") || []
+      @partial_except ||= @request.env["HTTP_X_INERTIA_PARTIAL_EXCEPT"]&.split(",") || EMPTY
     end
 
     def partial_only
-      @partial_only ||= @request.env["HTTP_X_INERTIA_PARTIAL_DATA"]&.split(",") || []
+      @partial_only ||= @request.env["HTTP_X_INERTIA_PARTIAL_DATA"]&.split(",") || EMPTY
     end
 
     def except_once
-      @except_once ||= @request.env["HTTP_X_INERTIA_EXCEPT_ONCE_PROPS"]&.split(",") || []
+      @except_once ||= @request.env["HTTP_X_INERTIA_EXCEPT_ONCE_PROPS"]&.split(",") || EMPTY
     end
 
     def partial_component
