@@ -51,4 +51,6 @@ module Inertia
   def self.optional(&block)
     Props::Optional.new(block:)
   end
+
+  autoload :ViteDevServer, "inertia/vite_dev_server"
 end
