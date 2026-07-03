@@ -27,7 +27,7 @@ module Inertia
       @props = props
       @context = context
 
-      @response = { component:, url: context.url }
+      @response = { component:, url: context.url, version: Frontend.version }
     end
 
     # Builds the page object hash.

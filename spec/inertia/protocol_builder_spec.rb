@@ -10,15 +10,32 @@ RSpec.describe Inertia::ProtocolBuilder do
     described_class.new("TestComponent", props, context:).call
   end
 
+  before do
+    allow(Inertia::Frontend).to receive(:version)
+  end
+
   describe "page object shape" do
-    it "includes the component name and request URL" do
+    it "includes the component name, request URL, and version" do
       page = build_page({ name: "Jonathan" }, {}, fullpath: "/users?active=true")
 
       expect(page).to include(
         component: "TestComponent",
         url: "/users?active=true",
+        version: nil,
         props: { name: "Jonathan" },
       )
+    end
+
+    context "with asset version" do
+      before do
+        allow(Inertia::Frontend).to receive(:version).and_return("version-123456")
+      end
+
+      it "includes version" do
+        page = build_page({})
+
+        expect(page[:version]).to eq("version-123456")
+      end
     end
 
     # Adapted from inertia-rails/spec/inertia/rendering_spec.rb "with a non matching partial component header".
