@@ -2,7 +2,7 @@
 
 require "spec_helper"
 
-RSpec.describe Inertia::VersionMiddleware do
+RSpec.describe Inertia::Middleware::Version do
   subject { described_class.new(app) }
 
   let(:app) { double(call: :test_app_response) }
