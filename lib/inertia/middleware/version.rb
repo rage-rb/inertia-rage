@@ -12,7 +12,6 @@ module Inertia
     class Version
       def initialize(app)
         @app = app
-        @server_version = Frontend.version
       end
 
       def call(env)
@@ -20,11 +19,17 @@ module Inertia
 
         client_version = env["HTTP_X_INERTIA_VERSION"]
 
-        if client_version.nil? || client_version == @server_version
+        if client_version.nil? || client_version == server_version
           @app.call(env)
         else
           [409, { "x-inertia-location" => Rack::Request.new(env).url }, []]
         end
+      end
+
+      private
+
+      def server_version
+        @server_version ||= Frontend.version
       end
     end
   end
