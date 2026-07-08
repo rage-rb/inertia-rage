@@ -10,6 +10,7 @@ require_relative "protocol_builder"
 require_relative "controller_helpers"
 require_relative "middleware/version"
 require_relative "middleware/assets"
+require_relative "rage_extension"
 require_relative "version"
 
 module Inertia
