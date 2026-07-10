@@ -10,7 +10,6 @@ module Inertia
 
       def initialize(app)
         @app = app
-        @assets_root = Frontend.root.join("dist/assets").realpath.to_s
       end
 
       def call(env)
@@ -24,11 +23,17 @@ module Inertia
           200,
           {
             "x-sendfile" => raw_path.delete_prefix("/assets"),
-            "x-sendfile-root" => @assets_root,
+            "x-sendfile-root" => assets_root,
             "cache-control" => "public, max-age=31536000, immutable"
           },
           EMPTY_BODY
         ]
+      end
+
+      private
+
+      def assets_root
+        @assets_root ||= Frontend.root.join("dist/assets").realpath.to_s
       end
     end
   end
