@@ -11,18 +11,29 @@ module Inertia
     class << self
       # Returns the root directory of the frontend application.
       #
-      # Searches for a Vite config file in common locations to determine
-      # where the frontend source lives.
+      # Uses {Configuration#frontend_path} if set, otherwise searches for a
+      # Vite config file in common locations to determine where the frontend
+      # source lives.
       #
       # @return [Pathname] path to the frontend root directory
       # @raise [RuntimeError] if no Vite config file is found
       def root
-        @root ||= begin
+        @root ||= Inertia.config.frontend_path || begin
           vite_config = Rage.root.glob(["*/vite.config.{js,ts,mjs,mts}", "app/*/vite.config.{js,ts,mjs,mts}"]).first
           raise "Vite config not found" unless vite_config
 
           vite_config.dirname
         end
+      end
+
+      # Returns the directory containing built frontend assets.
+      #
+      # Uses {Configuration#build_path} if set, otherwise defaults to the
+      # `dist` directory inside the frontend root.
+      #
+      # @return [Pathname] path to the build output directory
+      def dist
+        @dist ||= Inertia.config.build_path || root.join("dist")
       end
 
       # Returns a version identifier for the frontend assets.
@@ -31,10 +42,10 @@ module Inertia
       # when assets have changed, enabling Inertia's asset versioning.
       #
       # @return [String] MD5 hex digest of the manifest file
-      # @raise [RuntimeError] if no manifest or index.html is found in dist/
+      # @raise [RuntimeError] if no manifest or index.html is found in build path
       def version
         @version ||= begin
-          manifest = root.glob(["dist/.vite/manifest.json", "dist/index.html"]).first
+          manifest = dist.glob([".vite/manifest.json", "index.html"]).first
           Digest::MD5.file(manifest.to_s).hexdigest if manifest
         end
       end
@@ -90,14 +101,17 @@ module Inertia
       # @param data [Hash] the Inertia page object to embed
       # @return [String] HTML with rewritten URLs and page data
       def build_dynamic_layout(data)
-        layout = Net::HTTP.get(URI("http://localhost:5173"))
+        config = Inertia.config.dev_server
+        dev_server_url = "http://#{config.host}:#{config.port}"
+
+        layout = Net::HTTP.get(URI(dev_server_url))
 
         layout.gsub!(/(src|href)=(["'])\/([^"']+)\2/) do
-          "#{$1}=\"http://localhost:5173/#{$3}\""
+          "#{$1}=\"#{dev_server_url}/#{$3}\""
         end
 
         layout.gsub!(/from\s*(["'])\/([^"']+)\1/) do
-          "from \"http://localhost:5173/#{$2}\""
+          "from \"#{dev_server_url}/#{$2}\""
         end
 
         inject_page_data(layout, data)
@@ -107,10 +121,10 @@ module Inertia
       #
       # @param data [Hash] the Inertia page object to embed
       # @return [String] HTML with page data injected
-      # @raise [RuntimeError] if dist/index.html does not exist
+      # @raise [RuntimeError] if index.html does not exist in build path
       def build_static_layout(data)
         @layout ||= begin
-          layout = root.join("dist/index.html")
+          layout = dist.join("index.html")
           raise "Production layout not found at #{layout}. Ensure the frontend has been built" unless layout.exist?
           layout.read
         end

@@ -9,7 +9,7 @@ RSpec.describe Inertia::Middleware::Assets do
   let(:mock_path) { double(realpath: double(to_s: "/var/www/app/frontend/dist/assets")) }
 
   before do
-    allow(Inertia::Frontend).to receive(:root).and_return(double(join: mock_path))
+    allow(Inertia::Frontend).to receive(:dist).and_return(double(join: mock_path))
   end
 
   describe "#call" do

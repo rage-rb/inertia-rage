@@ -4,7 +4,10 @@ module Inertia
   #
   class ViteDevServer < Rage::Daemon
     def perform
-      command = "#{Frontend.package_runner} vite dev --clearScreen false"
+      config = Inertia.config.dev_server
+      host, port = config.host, config.port
+
+      command = "#{Frontend.package_runner} vite dev --clearScreen false --host #{host} --port #{port}"
       pid = Process.spawn(command, chdir: Frontend.root)
       Process.wait(pid)
 

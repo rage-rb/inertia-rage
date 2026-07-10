@@ -33,7 +33,7 @@ module Inertia
       private
 
       def assets_root
-        @assets_root ||= Frontend.root.join("dist/assets").realpath.to_s
+        @assets_root ||= Frontend.dist.join("assets").realpath.to_s
       end
     end
   end

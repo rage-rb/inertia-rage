@@ -7,6 +7,7 @@ require "fileutils"
 RSpec.describe Inertia::Frontend do
   around do |example|
     described_class.instance_variable_set(:@root, nil)
+    described_class.instance_variable_set(:@dist, nil)
     described_class.instance_variable_set(:@version, nil)
     described_class.instance_variable_set(:@package_runner, nil)
     described_class.instance_variable_set(:@layout, nil)
@@ -14,6 +15,7 @@ RSpec.describe Inertia::Frontend do
     example.run
 
     described_class.instance_variable_set(:@root, nil)
+    described_class.instance_variable_set(:@dist, nil)
     described_class.instance_variable_set(:@version, nil)
     described_class.instance_variable_set(:@package_runner, nil)
     described_class.instance_variable_set(:@layout, nil)
@@ -94,6 +96,39 @@ RSpec.describe Inertia::Frontend do
         result2 = described_class.root
 
         expect(result1).to equal(result2)
+      end
+    end
+
+    context "with custom config" do
+      before do
+        allow(Inertia.config).to receive(:frontend_path).and_return(:custom_frontend_path)
+      end
+
+      it "returns configured root path" do
+        expect(described_class.root).to eq(:custom_frontend_path)
+      end
+    end
+  end
+
+  describe ".dist" do
+    let(:root) { double }
+
+    before do
+      allow(described_class).to receive(:root).and_return(root)
+    end
+
+    it "returns the default build directory" do
+      expect(root).to receive(:join).with("dist").and_return(:default_build_path)
+      expect(described_class.dist).to eq(:default_build_path)
+    end
+
+    context "with custom config" do
+      before do
+        allow(Inertia.config).to receive(:build_path).and_return(:custom_build_path)
+      end
+
+      it "returns configured root path" do
+        expect(described_class.dist).to eq(:custom_build_path)
       end
     end
   end
@@ -443,6 +478,13 @@ RSpec.describe Inertia::Frontend do
 
       expect(result).to include('type="application/json"')
       expect(result).to include(data.to_json)
+    end
+
+    it "respects dev server configuration" do
+      allow(Inertia.config).to receive(:dev_server).and_return(double(host: "testhost", port: 1234))
+      expect(Net::HTTP).to receive(:get).with(URI("http://testhost:1234")).and_return(+"")
+
+      described_class.render_layout({})
     end
   end
 end

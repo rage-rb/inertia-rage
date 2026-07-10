@@ -37,7 +37,7 @@ module Inertia
 
     # Prebuild frontend assets before launching the server in production
     before_server_start do
-      unless Rage.env.development?
+      if Inertia.config.build_on_start?
         puts "INFO: Building frontend"
         puts ""
         system("#{Frontend.package_runner} vite build", chdir: Frontend.root) || abort("ERROR: Frontend build failed")
