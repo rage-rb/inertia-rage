@@ -32,6 +32,7 @@ module Inertia
       # `dist` directory inside the frontend root.
       #
       # @return [Pathname] path to the build output directory
+      # @raise [RuntimeError] if no Vite config file is found
       def dist
         @dist ||= Inertia.config.build_path || root.join("dist")
       end
@@ -42,7 +43,7 @@ module Inertia
       # when assets have changed, enabling Inertia's asset versioning.
       #
       # @return [String] MD5 hex digest of the manifest file
-      # @raise [RuntimeError] if no manifest or index.html is found in build path
+      # @raise [RuntimeError] if no Vite config file is found
       def version
         @version ||= begin
           manifest = dist.glob([".vite/manifest.json", "index.html"]).first
