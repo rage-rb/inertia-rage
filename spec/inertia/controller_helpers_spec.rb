@@ -109,33 +109,92 @@ RSpec.describe Inertia::ControllerHelpers do
       end
     end
 
-    context "with location :back" do
-      it "sets the location header to the referer" do
-        controller.redirect_to(:back)
+  end
+
+  describe "#redirect_back" do
+    let(:referer) { "https://example.com/previous" }
+    let(:request) { double(get?: false, post?: false, env: { "HTTP_REFERER" => referer }) }
+
+    before do
+      allow(controller).to receive(:request).and_return(request)
+    end
+
+    context "with a referer" do
+      it "redirects to the referer" do
+        controller.redirect_back(fallback_location: "/fallback")
+
+        expect(response_headers["location"]).to eq(referer)
+      end
+    end
+
+    context "without a referer" do
+      let(:referer) { nil }
+
+      it "redirects to the fallback location" do
+        controller.redirect_back(fallback_location: "/fallback")
+
+        expect(response_headers["location"]).to eq("/fallback")
+      end
+    end
+
+    context "with external: true" do
+      it "sets the X-Inertia-Location header" do
+        controller.redirect_back(fallback_location: "/fallback", external: true)
+
+        expect(response_headers["x-inertia-location"]).to eq(referer)
+      end
+
+      it "responds with 409 status" do
+        controller.redirect_back(fallback_location: "/fallback", external: true)
+
+        expect(response_status).to eq(409)
+      end
+    end
+  end
+
+  describe "#redirect_back_or_to" do
+    let(:referer) { "https://example.com/previous" }
+    let(:request) { double(get?: false, post?: false, env: { "HTTP_REFERER" => referer }) }
+
+    before do
+      allow(controller).to receive(:request).and_return(request)
+    end
+
+    context "with a referer" do
+      it "redirects to the referer" do
+        controller.redirect_back_or_to("/fallback")
 
         expect(response_headers["location"]).to eq(referer)
       end
 
-      context "with a GET request" do
-        let(:is_get) { true }
-        let(:is_post) { false }
+      it "responds with 303 status for non-GET/POST requests" do
+        controller.redirect_back_or_to("/fallback")
 
-        it "responds with 302 status" do
-          controller.redirect_to(:back)
+        expect(response_status).to eq(303)
+      end
+    end
 
-          expect(response_status).to eq(302)
-        end
+    context "without a referer" do
+      let(:referer) { nil }
+
+      it "redirects to the fallback location" do
+        controller.redirect_back_or_to("/fallback")
+
+        expect(response_headers["location"]).to eq("/fallback")
+      end
+    end
+
+    context "with external: true" do
+      it "sets the X-Inertia-Location header" do
+        controller.redirect_back_or_to("/fallback", external: true)
+
+        expect(response_headers["x-inertia-location"]).to eq(referer)
       end
 
-      context "with a non-GET/POST request" do
-        let(:is_get) { false }
-        let(:is_post) { false }
+      it "responds with 409 status" do
+        controller.redirect_back_or_to("/fallback", external: true)
 
-        it "responds with 303 status" do
-          controller.redirect_to(:back)
-
-          expect(response_status).to eq(303)
-        end
+        expect(response_status).to eq(409)
       end
     end
   end

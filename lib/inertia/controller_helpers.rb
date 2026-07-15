@@ -8,15 +8,12 @@ module Inertia
   module ControllerHelpers
     # Redirects the client to the specified location.
     #
-    # @param location [String, Symbol] the URL to redirect to, or `:back` to redirect to the referring page
+    # @param location [String] the URL to redirect to
     # @param external [Boolean] whether to force an external (full page) redirect.
     #   When `true`, the browser will perform a full page visit instead of an Inertia visit
     #
     # @example Basic redirect
     #   redirect_to "/dashboard"
-    #
-    # @example Redirect back to the previous page
-    #   redirect_to :back
     #
     # @example Force an external redirect
     #   redirect_to "https://example.com", external: true
@@ -28,7 +25,42 @@ module Inertia
       end
 
       head(request.get? || request.post? ? 302 : 303)
-      headers["location"] = location == :back ? request.env["HTTP_REFERER"] : location
+      headers["location"] = location
+    end
+
+    # Redirects the client back to the referring page, with a fallback location.
+    #
+    # @param fallback_location [String] the URL to redirect to if there is no referer
+    # @param external [Boolean] whether to force an external (full page) redirect.
+    #   When `true`, the browser will perform a full page visit instead of an Inertia visit
+    #
+    # @example Redirect back with a fallback
+    #   redirect_back fallback_location: "/dashboard"
+    #
+    # @see #redirect_back_or_to
+    def redirect_back(fallback_location:, external: false)
+      redirect_back_or_to fallback_location, external:
+    end
+
+    # Redirects the client back to the referring page, or to the specified fallback location.
+    #
+    # @param fallback_location [String] the URL to redirect to if there is no referer
+    # @param external [Boolean] whether to force an external (full page) redirect.
+    #   When `true`, the browser will perform a full page visit instead of an Inertia visit
+    #
+    # @example Redirect back or to a fallback
+    #   redirect_back_or_to "/dashboard"
+    #
+    # @example Force an external redirect
+    #   redirect_back_or_to "/dashboard", external: true
+    def redirect_back_or_to(fallback_location, external: false)
+      referer = request.env["HTTP_REFERER"]
+
+      if referer
+        redirect_to referer, external:
+      else
+        redirect_to fallback_location, external:
+      end
     end
 
     def self.included(klass)
