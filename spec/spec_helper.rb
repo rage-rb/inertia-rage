@@ -1,3 +1,4 @@
+require "rage/all"
 require "inertia-rage"
 
 RSpec.configure do |config|

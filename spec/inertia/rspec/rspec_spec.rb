@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require "rage/all"
-
 module RspecSpecHelpers
   class TestController < RageController::API
     def index

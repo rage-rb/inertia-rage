@@ -4,45 +4,39 @@ require "spec_helper"
 
 RSpec.describe Inertia::ControllerHelpers do
   let(:controller_class) do
-    Class.new do
+    Class.new(RageController::API) do
       include Inertia::ControllerHelpers
-
-      attr_reader :headers, :status
-      attr_reader :request, :params
-
-      def initialize
-        @headers = {}
-        @status = nil
-      end
-
-      def head(status)
-        @status = status
-      end
     end
   end
 
-  let(:request) { double(get?: is_get, post?: is_post, env: { "HTTP_REFERER" => referer }) }
-  let(:is_get) { false }
-  let(:is_post) { false }
-  let(:referer) { "https://example.com/previous" }
-  let(:controller) { controller_class.new }
+  let(:controller) { controller_class.new(nil, nil) }
 
-  before do
-    allow(controller).to receive(:request).and_return(request)
-  end
+  # Relies on Rage private API
+  let(:response_status) { controller.__status }
+  let(:response_headers) { controller.__headers }
+  let(:response_body) { controller.__body[0] }
 
   describe "#redirect_to" do
+    let(:is_get) { false }
+    let(:is_post) { false }
+    let(:referer) { "https://example.com/previous" }
+    let(:request) { double(get?: is_get, post?: is_post, env: { "HTTP_REFERER" => referer }) }
+
+    before do
+      allow(controller).to receive(:request).and_return(request)
+    end
+
     context "with external: true" do
       it "sets the X-Inertia-Location header" do
         controller.redirect_to("https://external.com", external: true)
 
-        expect(controller.headers["x-inertia-location"]).to eq("https://external.com")
+        expect(response_headers["x-inertia-location"]).to eq("https://external.com")
       end
 
       it "responds with 409 status" do
         controller.redirect_to("https://external.com", external: true)
 
-        expect(controller.status).to eq(409)
+        expect(response_status).to eq(409)
       end
     end
 
@@ -53,19 +47,19 @@ RSpec.describe Inertia::ControllerHelpers do
       it "responds with 302 status" do
         controller.redirect_to("/dashboard")
 
-        expect(controller.status).to eq(302)
+        expect(response_status).to eq(302)
       end
 
       it "sets the location header" do
         controller.redirect_to("/dashboard")
 
-        expect(controller.headers["location"]).to eq("/dashboard")
+        expect(response_headers["location"]).to eq("/dashboard")
       end
 
       it "doesn't set the X-Inertia-Location header" do
         controller.redirect_to("/dashboard")
 
-        expect(controller.headers["x-inertia-location"]).to be_nil
+        expect(response_headers["x-inertia-location"]).to be_nil
       end
     end
 
@@ -76,19 +70,19 @@ RSpec.describe Inertia::ControllerHelpers do
       it "responds with 302 status" do
         controller.redirect_to("/dashboard")
 
-        expect(controller.status).to eq(302)
+        expect(response_status).to eq(302)
       end
 
       it "sets the location header" do
         controller.redirect_to("/dashboard")
 
-        expect(controller.headers["location"]).to eq("/dashboard")
+        expect(response_headers["location"]).to eq("/dashboard")
       end
 
       it "doesn't set the X-Inertia-Location header" do
         controller.redirect_to("/dashboard")
 
-        expect(controller.headers["x-inertia-location"]).to be_nil
+        expect(response_headers["x-inertia-location"]).to be_nil
       end
     end
 
@@ -99,19 +93,19 @@ RSpec.describe Inertia::ControllerHelpers do
       it "responds with 303 status" do
         controller.redirect_to("/dashboard")
 
-        expect(controller.status).to eq(303)
+        expect(response_status).to eq(303)
       end
 
       it "sets the location header" do
         controller.redirect_to("/dashboard")
 
-        expect(controller.headers["location"]).to eq("/dashboard")
+        expect(response_headers["location"]).to eq("/dashboard")
       end
 
       it "doesn't set the X-Inertia-Location header" do
         controller.redirect_to("/dashboard")
 
-        expect(controller.headers["x-inertia-location"]).to be_nil
+        expect(response_headers["x-inertia-location"]).to be_nil
       end
     end
 
@@ -119,7 +113,7 @@ RSpec.describe Inertia::ControllerHelpers do
       it "sets the location header to the referer" do
         controller.redirect_to(:back)
 
-        expect(controller.headers["location"]).to eq(referer)
+        expect(response_headers["location"]).to eq(referer)
       end
 
       context "with a GET request" do
@@ -129,7 +123,7 @@ RSpec.describe Inertia::ControllerHelpers do
         it "responds with 302 status" do
           controller.redirect_to(:back)
 
-          expect(controller.status).to eq(302)
+          expect(response_status).to eq(302)
         end
       end
 
@@ -140,7 +134,7 @@ RSpec.describe Inertia::ControllerHelpers do
         it "responds with 303 status" do
           controller.redirect_to(:back)
 
-          expect(controller.status).to eq(303)
+          expect(response_status).to eq(303)
         end
       end
     end
@@ -148,7 +142,6 @@ RSpec.describe Inertia::ControllerHelpers do
 
   describe "#append_info_to_payload" do
     let(:params) { { user_id: 1, action: "show" } }
-    let(:controller) { controller_class.new }
 
     before do
       allow(controller).to receive(:params).and_return(params)
@@ -181,6 +174,158 @@ RSpec.describe Inertia::ControllerHelpers do
         controller.send(:append_info_to_payload, context)
 
         expect(context).to be_empty
+      end
+    end
+  end
+
+  describe "#protect_from_csrf" do
+    let(:request_method) { "POST" }
+    let(:sec_fetch_site) { nil }
+    let(:origin) { nil }
+    let(:http_host) { "example.com" }
+
+    let(:request) do
+      double(
+        get?: false,
+        post?: true,
+        env: {
+          "REQUEST_METHOD" => request_method,
+          "HTTP_SEC_FETCH_SITE" => sec_fetch_site,
+          "HTTP_ORIGIN" => origin,
+          "HTTP_HOST" => http_host
+        }
+      )
+    end
+
+    before do
+      allow(controller).to receive(:request).and_return(request)
+    end
+
+    context "with safe methods" do
+      %w[GET HEAD OPTIONS].each do |method|
+        context "when request method is #{method}" do
+          let(:request_method) { method }
+
+          it "allows the request" do
+            expect(controller).not_to receive(:render)
+
+            controller.send(:protect_from_csrf)
+          end
+        end
+      end
+    end
+
+    context "with Sec-Fetch-Site header" do
+      context "when same-origin" do
+        let(:sec_fetch_site) { "same-origin" }
+
+        it "allows the request" do
+          expect(controller).not_to receive(:render)
+
+          controller.send(:protect_from_csrf)
+        end
+      end
+
+      context "when none" do
+        let(:sec_fetch_site) { "none" }
+
+        it "allows the request" do
+          expect(controller).not_to receive(:render)
+
+          controller.send(:protect_from_csrf)
+        end
+      end
+
+      context "when cross-site" do
+        let(:sec_fetch_site) { "cross-site" }
+
+        it "rejects the request" do
+          controller.send(:protect_from_csrf)
+
+          expect(response_status).to eq(403)
+          expect(response_body).to eq("CSRF rejected")
+        end
+      end
+
+      context "when same-site" do
+        let(:sec_fetch_site) { "same-site" }
+
+        it "rejects the request" do
+          controller.send(:protect_from_csrf)
+
+          expect(response_status).to eq(403)
+          expect(response_body).to eq("CSRF rejected")
+        end
+      end
+    end
+
+    context "without Sec-Fetch-Site header (fallback to Origin)" do
+      let(:sec_fetch_site) { nil }
+
+      context "when Origin header is not present" do
+        let(:origin) { nil }
+
+        it "allows the request" do
+          expect(controller).not_to receive(:render)
+
+          controller.send(:protect_from_csrf)
+        end
+      end
+
+      context "when Origin matches Host" do
+        let(:origin) { "https://example.com" }
+        let(:http_host) { "example.com" }
+
+        it "allows the request" do
+          expect(controller).not_to receive(:render)
+
+          controller.send(:protect_from_csrf)
+        end
+      end
+
+      context "when Origin matches Host with port" do
+        let(:origin) { "https://localhost:3000" }
+        let(:http_host) { "localhost:3000" }
+
+        it "allows the request" do
+          expect(controller).not_to receive(:render)
+
+          controller.send(:protect_from_csrf)
+        end
+      end
+
+      context "when Origin host matches but port differs" do
+        let(:origin) { "https://localhost:3000" }
+        let(:http_host) { "localhost:4000" }
+
+        it "rejects the request" do
+          controller.send(:protect_from_csrf)
+
+          expect(response_status).to eq(403)
+        end
+      end
+
+      context "when Origin does not match Host" do
+        let(:origin) { "https://evil.com" }
+        let(:http_host) { "example.com" }
+
+        it "rejects the request" do
+          controller.send(:protect_from_csrf)
+
+          expect(response_status).to eq(403)
+          expect(response_body).to eq("CSRF rejected")
+        end
+      end
+
+      context "when Origin is invalid" do
+        let(:origin) { "not a valid uri" }
+
+        it "rejects the request" do
+          controller.send(:protect_from_csrf)
+
+          expect(response_status).to eq(403)
+          expect(response_body).to eq("CSRF rejected")
+        end
       end
     end
   end
