@@ -109,6 +109,38 @@ module Inertia
   end
 end
 
+RSpec::Matchers.matcher :redirect_to do |expected, external: false|
+  failure_message do |response|
+    header = external ? "x-inertia-location" : "location"
+    actual = response.headers[header]
+
+    if expected.is_a?(Regexp)
+      "expected response to be a redirect to /#{expected.source}/ but was a redirect to \"#{actual}\""
+    else
+      "expected response to be a redirect to \"#{expected}\" but was a redirect to \"#{actual}\""
+    end
+  end
+
+  failure_message_when_negated do |response|
+    if expected.is_a?(Regexp)
+      "expected not to redirect to /#{expected.source}/, but did"
+    else
+      "expected not to redirect to \"#{expected}\", but did"
+    end
+  end
+
+  match do |response|
+    header = external ? "x-inertia-location" : "location"
+    actual = response.headers[header]
+
+    if expected.is_a?(Regexp)
+      actual&.match?(expected)
+    else
+      actual == expected
+    end
+  end
+end
+
 RSpec.configure do |config|
   config.include(Inertia::RSpec::TestHelpers, type: :request)
   config.prepend(Inertia::RSpec::RequestHelpers, type: :request)

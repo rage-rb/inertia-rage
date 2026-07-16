@@ -2,6 +2,8 @@
 
 module RspecSpecHelpers
   class TestController < RageController::API
+    include Inertia::ControllerHelpers
+
     def index
       render inertia: "Users/Index", props: {
         "users" => [{ "id" => 1, "name" => "John" }, { "id" => 2, "name" => "Jane" }],
@@ -24,6 +26,14 @@ module RspecSpecHelpers
     def json_response
       render json: { message: "Hello" }
     end
+
+    def redirect_action
+      redirect_to "/users/1"
+    end
+
+    def redirect_to_external
+      redirect_to "https://example.com/callback", external: true
+    end
   end
 
   Rage.routes.draw do
@@ -31,6 +41,8 @@ module RspecSpecHelpers
     get "/users/:id", to: "rspec_spec_helpers/test#show"
     get "/plain", to: "rspec_spec_helpers/test#plain"
     get "/json", to: "rspec_spec_helpers/test#json_response"
+    get "/redirect", to: "rspec_spec_helpers/test#redirect_action"
+    get "/redirect_external", to: "rspec_spec_helpers/test#redirect_to_external"
   end
 end
 
@@ -149,6 +161,77 @@ RSpec.describe "Inertia::RSpec", type: :request do
         expect {
           get "/users/1", inertia: { unknown: :option }
         }.to raise_error(ArgumentError, /Unknown :inertia option/)
+      end
+    end
+  end
+
+  describe "redirect_to matcher" do
+    context "with string expectation" do
+      it "matches exact redirect location" do
+        get "/redirect"
+        expect(response).to redirect_to("/users/1")
+      end
+
+      it "fails when location does not match" do
+        get "/redirect"
+        expect(response).not_to redirect_to("/users/2")
+      end
+
+      it "provides failure message for non-matching location" do
+        get "/redirect"
+        expect {
+          expect(response).to redirect_to("/wrong")
+        }.to raise_error(RSpec::Expectations::ExpectationNotMetError, 'expected response to be a redirect to "/wrong" but was a redirect to "/users/1"')
+      end
+
+      it "provides failure message when negated" do
+        get "/redirect"
+        expect {
+          expect(response).not_to redirect_to("/users/1")
+        }.to raise_error(RSpec::Expectations::ExpectationNotMetError, 'expected not to redirect to "/users/1", but did')
+      end
+    end
+
+    context "with regex expectation" do
+      it "matches redirect location against pattern" do
+        get "/redirect"
+        expect(response).to redirect_to(%r{/users/\d+})
+      end
+
+      it "fails when location does not match pattern" do
+        get "/redirect"
+        expect(response).not_to redirect_to(%r{/posts/\d+})
+      end
+
+      it "provides failure message for non-matching pattern" do
+        get "/redirect"
+        expect {
+          expect(response).to redirect_to(%r{/posts/\d+})
+        }.to raise_error(RSpec::Expectations::ExpectationNotMetError, 'expected response to be a redirect to //posts/\d+/ but was a redirect to "/users/1"')
+      end
+
+      it "provides failure message when negated" do
+        get "/redirect"
+        expect {
+          expect(response).not_to redirect_to(%r{/users/\d+})
+        }.to raise_error(RSpec::Expectations::ExpectationNotMetError, 'expected not to redirect to //users/\d+/, but did')
+      end
+    end
+
+    context "with external: true" do
+      it "matches full URL" do
+        get "/redirect_external"
+        expect(response).to redirect_to("https://example.com/callback", external: true)
+      end
+
+      it "matches URL with regex" do
+        get "/redirect_external"
+        expect(response).to redirect_to(%r{example\.com}, external: true)
+      end
+
+      it "does not match when external option is missing" do
+        get "/redirect_external"
+        expect(response).not_to redirect_to("https://example.com/callback")
       end
     end
   end
