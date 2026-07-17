@@ -40,6 +40,10 @@ module Inertia
         component = "#{component_path}/#{component_name}"
       end
 
+      if shared_data = controller.inertia_shared_data
+        props = shared_data.merge(props)
+      end
+
       context = RequestContext.new(request, component:)
       data = ProtocolBuilder.new(component, props, context:).call
 

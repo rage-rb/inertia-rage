@@ -6,7 +6,7 @@ RSpec.describe Inertia::Renderer do
   let(:request) { double(fullpath: "/users", env: {}) }
   let(:controller_class) { double(name: "UsersController") }
   let(:controller) do
-    double(request:, headers: {}, action_name: "index", class: controller_class)
+    double(request:, headers: {}, action_name: "index", inertia_shared_data: nil, class: controller_class)
   end
 
   let(:context) { instance_double(Inertia::RequestContext) }
@@ -31,17 +31,18 @@ RSpec.describe Inertia::Renderer do
       )
     end
 
-    it "infers component name from controller and action" do
-      namespaced_class = double("ControllerClass", name: "Admin::UsersController")
-      namespaced_controller = double(request:, headers: {}, action_name: "show", class: namespaced_class)
+    context "with namespaced controller" do
+      let(:controller_class) { double("ControllerClass", name: "Admin::UsersController") }
 
-      described_class.call({ user: "Jonathan" }, nil, controller: namespaced_controller)
+      it "infers component name from controller and action" do
+        described_class.call({ user: "Jonathan" }, nil, controller:)
 
-      expect(Inertia::ProtocolBuilder).to have_received(:new).with(
-        "Admin/Users/Show",
-        { user: "Jonathan" },
-        context: context,
-      )
+        expect(Inertia::ProtocolBuilder).to have_received(:new).with(
+          "Admin/Users/Index",
+          { user: "Jonathan" },
+          context: context,
+        )
+      end
     end
 
     it "capitalizes the action name in inferred components" do

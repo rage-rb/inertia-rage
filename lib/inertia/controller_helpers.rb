@@ -6,6 +6,57 @@ module Inertia
   ##
   # Provides controller helper methods for Inertia.js integration.
   module ControllerHelpers
+    module ClassMethods
+      # Shares data with all Inertia responses in a controller.
+      #
+      # This method registers a before_action that evaluates the given block
+      # in the controller instance context and merges the returned hash into
+      # the shared data. The shared data is automatically included in all
+      # Inertia responses rendered by the controller.
+      #
+      # Multiple `inertia_share` calls are cumulative - each block's data
+      # is merged into the existing shared data.
+      #
+      # @param options [Hash] options passed to `before_action` (e.g., `only:`, `except:`, `if:`, `unless:`)
+      # @yield Block evaluated in controller context that returns a Hash of data to share
+      # @yieldreturn [Hash] the data to merge into the shared props
+      #
+      # @example Share data for all actions
+      #   class ApplicationController < RageController::API
+      #     inertia_share do
+      #       { current_user: current_user&.as_json }
+      #     end
+      #   end
+      #
+      # @example Share data only for specific actions
+      #   class UsersController < ApplicationController
+      #     inertia_share only: [:index, :show] do
+      #       { permissions: current_user.permissions }
+      #     end
+      #   end
+      #
+      # @example Share data conditionally
+      #   class DashboardController < ApplicationController
+      #     inertia_share if: :user_signed_in? do
+      #       { notifications: current_user.unread_notifications }
+      #     end
+      #   end
+      def inertia_share(**options, &block)
+        raise ArgumentError, "inertia_share requires a block" unless block
+
+        before_action(**options) do
+          data = instance_eval(&block)
+          return unless data
+
+          if self.inertia_shared_data
+            self.inertia_shared_data.merge!(data)
+          else
+            self.inertia_shared_data = data
+          end
+        end
+      end
+    end
+
     # Redirects the client to the specified location.
     #
     # @param location [String] the URL to redirect to
@@ -63,8 +114,10 @@ module Inertia
       end
     end
 
+    # @private
     def self.included(klass)
       klass.before_action :protect_from_csrf
+      klass.attr_accessor :inertia_shared_data
     end
 
     private

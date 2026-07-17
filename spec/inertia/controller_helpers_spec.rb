@@ -6,10 +6,93 @@ RSpec.describe Inertia::ControllerHelpers do
   let(:controller_class) do
     Class.new(RageController::API) do
       include Inertia::ControllerHelpers
+      extend Inertia::ControllerHelpers::ClassMethods
     end
   end
 
   let(:controller) { controller_class.new(nil, nil) }
+
+  describe ".inertia_share" do
+    it "calls before_action" do
+      expect(controller_class).to receive(:before_action).with(only: :index)
+
+      controller_class.inertia_share(only: :index) { { key: "value" } }
+    end
+
+    it "initializes inertia_shared_data with nil" do
+      expect(controller.inertia_shared_data).to be_nil
+    end
+
+    it "sets inertia_shared_data from the block result" do
+      actions = controller_class.inertia_share { { user: "John" } }
+      method_name = actions[-1][:name]
+
+      controller.send(method_name)
+
+      expect(controller.inertia_shared_data).to eq({ user: "John" })
+    end
+
+    it "merges data from multiple inertia_share calls" do
+      actions1 = controller_class.inertia_share { { user: "John" } }
+      actions2 = controller_class.inertia_share { { locale: "en" } }
+      method_name1 = actions1[-2][:name]
+      method_name2 = actions2[-1][:name]
+
+      controller.send(method_name1)
+      controller.send(method_name2)
+
+      expect(controller.inertia_shared_data).to eq({ user: "John", locale: "en" })
+    end
+
+    it "later calls override earlier values for the same key" do
+      actions1 = controller_class.inertia_share { { user: "John" } }
+      actions2 = controller_class.inertia_share { { user: "Jane" } }
+      method_name1 = actions1[-2][:name]
+      method_name2 = actions2[-1][:name]
+
+      controller.send(method_name1)
+      controller.send(method_name2)
+
+      expect(controller.inertia_shared_data).to eq({ user: "Jane" })
+    end
+
+    it "evaluates the block in the controller instance context" do
+      controller_class.define_method(:current_user) { "Alice" }
+      actions = controller_class.inertia_share { { user: current_user } }
+      method_name = actions[-1][:name]
+
+      controller.send(method_name)
+
+      expect(controller.inertia_shared_data).to eq({ user: "Alice" })
+    end
+
+    it "raises ArgumentError when no block is given" do
+      expect {
+        controller_class.inertia_share(only: :index)
+      }.to raise_error(ArgumentError, "inertia_share requires a block")
+    end
+
+    it "does nothing when the block returns nil" do
+      actions = controller_class.inertia_share { nil }
+      method_name = actions[-1][:name]
+
+      controller.send(method_name)
+
+      expect(controller.inertia_shared_data).to be_nil
+    end
+
+    it "preserves existing data when the block returns nil" do
+      actions1 = controller_class.inertia_share { { user: "John" } }
+      actions2 = controller_class.inertia_share { nil }
+      method_name1 = actions1[-2][:name]
+      method_name2 = actions2[-1][:name]
+
+      controller.send(method_name1)
+      controller.send(method_name2)
+
+      expect(controller.inertia_shared_data).to eq({ user: "John" })
+    end
+  end
 
   # Relies on Rage private API
   let(:response_status) { controller.__status }

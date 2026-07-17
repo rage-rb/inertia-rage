@@ -33,6 +33,7 @@ module Inertia
     # Include ControllerHelpers to add support for `redirect_to` and other Inertia-specific methods
     initializer "inertia.rage.controller_helpers" do
       RageController::API.include ControllerHelpers
+      RageController::API.extend ControllerHelpers::ClassMethods
     end
 
     # Prebuild frontend assets before launching the server in production
