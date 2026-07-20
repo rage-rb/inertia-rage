@@ -5,7 +5,7 @@ module Inertia
   # Stores global configuration options for the Inertia integration.
   #
   # @example Configure via block
-  #   Inertia.configure do
+  #   Inertia.configure do |config|
   #     config.frontend_path = "client"
   #     config.build_path = "public/dist"
   #     config.build_on_start = false
@@ -15,9 +15,6 @@ module Inertia
   #   end
   #
   class Configuration
-    # @private
-    def config = self
-
     # @private
     def initialize
       @build_on_start = !Rage.env.development?

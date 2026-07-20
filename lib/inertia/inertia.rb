@@ -22,15 +22,15 @@ module Inertia
   #
   # @yield Evaluates the block in the configuration context
   # @example
-  #   Inertia.configure do
+  #   Inertia.configure do |config|
   #     config.frontend_path = "client"
   #     config.build_on_start = false
   #
   #     config.dev_server.host = "0.0.0.0"
   #     config.dev_server.port = 3000
   #   end
-  def self.configure(&)
-    config.instance_eval(&)
+  def self.configure
+    yield config
   end
 
   # Returns the global configuration instance.
