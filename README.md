@@ -157,7 +157,7 @@ end
 
 ## Testing with RSpec
 
-The gem provides an `inertia` helper for testing Inertia responses. Require `inertia/rspec` in your request specs to access it:
+The gem provides an [`inertia`](https://inertia-api.rage-rb.dev/Inertia/RSpec/TestResponse) helper for testing Inertia responses. Require `inertia/rspec` in your request specs to access it:
 
 ```ruby
 require "inertia/rspec"
@@ -168,6 +168,20 @@ RSpec.describe UsersController, type: :request do
 
     expect(inertia.component).to eq("Posts/Index")
     expect(inertia.props).to have_key(:posts)
+  end
+end
+```
+
+Partial reloading is supported via the [`inertia` option](https://inertia-api.rage-rb.dev/Inertia/RSpec/RequestHelpers.html) on the `get` method:
+
+```ruby
+require "inertia/rspec"
+
+RSpec.describe UsersController, type: :request do
+  it "renders post comments" do
+    get "posts/1", inertia: { only: :comments }
+
+    expect(inertia.props.keys).to eq(:comments)
   end
 end
 ```
@@ -183,7 +197,13 @@ Inertia.configure do |config|
 end
 ```
 
-See the API documentation for the complete list of configuration options.
+See the [API documentation](https://inertia-api.rage-rb.dev/Inertia/Configuration.html) for the complete list of configuration options.
+
+## Learn More
+
+- [Props API Reference](https://inertia-api.rage-rb.dev/Inertia)
+- [Controller API Reference](https://inertia-api.rage-rb.dev/Inertia/ControllerHelpers.html)
+- [Configuration API Reference](https://inertia-api.rage-rb.dev/Inertia/Configuration.html)
 
 ## Contributing
 
