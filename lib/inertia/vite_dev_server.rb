@@ -4,6 +4,8 @@ module Inertia
   #
   class ViteDevServer < Rage::Daemon
     def perform
+      puts "INFO: Starting Vite dev server"
+
       config = Inertia.config.dev_server
       host, port = config.host, config.port
 

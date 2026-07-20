@@ -8,6 +8,7 @@ RSpec.describe Inertia::ViteDevServer do
   before do
     allow(Inertia::Frontend).to receive(:root).and_return("test-frontend-root")
     allow(Inertia::Frontend).to receive(:package_runner).and_return("pnpx")
+    allow(subject).to receive(:puts)
   end
 
   it "starts the Vite server" do
