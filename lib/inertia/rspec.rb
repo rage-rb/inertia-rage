@@ -7,8 +7,16 @@ module Inertia
     # Wraps an Inertia response for test assertions.
     #
     # @example Accessing response data
-    #   expect(inertia.component).to eq("Users/Show")
-    #   expect(inertia.props[:user]).to include({ name: "John" })
+    #   require "inertia/rspec"
+    #
+    #   RSpec.describe UsersController, type: :request do
+    #     it "renders user posts" do
+    #       get "posts"
+    #
+    #       expect(inertia.component).to eq("Posts/Index")
+    #       expect(inertia.props).to have_key(:posts)
+    #     end
+    #   end
     class TestResponse
       # @param data [Hash] the raw Inertia response data
       def initialize(data)
