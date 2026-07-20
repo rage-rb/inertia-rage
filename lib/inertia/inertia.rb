@@ -40,6 +40,7 @@ module Inertia
     @config ||= Configuration.new
   end
 
+  # @!group Props
   # Creates a deferred prop that will be loaded in a subsequent request after the initial page load.
   #
   # @param group [String] the group name for batching deferred props together
@@ -80,6 +81,7 @@ module Inertia
   def self.optional(&block)
     Props::Optional.new(block:)
   end
+  # @!endgroup
 
   autoload :ViteDevServer, "inertia/vite_dev_server"
 end
