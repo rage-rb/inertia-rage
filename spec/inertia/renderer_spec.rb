@@ -6,8 +6,9 @@ RSpec.describe Inertia::Renderer do
   let(:request) { double(fullpath: "/users", env: {}) }
   let(:controller_class) { double(name: "UsersController") }
   let(:action_name) { "index" }
+  let(:headers) { {} }
   let(:controller) do
-    double(request:, headers: {}, action_name:, inertia_shared_data: nil, class: controller_class)
+    double(request:, headers:, action_name:, inertia_shared_data: nil, class: controller_class)
   end
 
   let(:context) { instance_double(Inertia::RequestContext) }
@@ -161,10 +162,24 @@ RSpec.describe Inertia::Renderer do
       expect(controller.headers["content-type"]).to eq("text/html; charset=utf-8")
     end
 
-    it "does not set Inertia-specific headers" do
+    it "sets the vary header" do
       described_class.call("Users/Index", {}, controller:)
 
-      expect(controller.headers).not_to have_key("vary")
+      expect(controller.headers["vary"]).to eq("x-inertia")
+    end
+
+    context "with existing vary header" do
+      let(:headers) { { "vary" => "accept" } }
+      it "appends to the header" do
+        described_class.call("Users/Index", {}, controller:)
+
+        expect(controller.headers["vary"]).to eq("accept, x-inertia")
+      end
+    end
+
+    it "does not set the x-inertia header" do
+      described_class.call("Users/Index", {}, controller:)
+
       expect(controller.headers).not_to have_key("x-inertia")
     end
   end

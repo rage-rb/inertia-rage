@@ -50,8 +50,13 @@ module Inertia
       context = RequestContext.new(request, component:)
       data = ProtocolBuilder.new(component, props, context:).call
 
-      if request.env["HTTP_X_INERTIA"]
+      if headers["vary"]
+        headers["vary"] += ", x-inertia"
+      else
         headers["vary"] = "x-inertia"
+      end
+
+      if request.env["HTTP_X_INERTIA"]
         headers["x-inertia"] = "true"
         headers["content-type"] = "application/json; charset=utf-8"
         data.to_json
