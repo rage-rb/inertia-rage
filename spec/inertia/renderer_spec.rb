@@ -54,6 +54,12 @@ RSpec.describe Inertia::Renderer do
         context: context,
       )
     end
+
+    it "raises when using inferred component with explicit props" do
+      expect {
+        described_class.call({ user: "Jonathan" }, { extra: "data" }, controller:)
+      }.to raise_error(ArgumentError, "props must be nil when using inferred component names")
+    end
   end
 
   describe "RequestContext" do
