@@ -5,8 +5,9 @@ require "spec_helper"
 RSpec.describe Inertia::Renderer do
   let(:request) { double(fullpath: "/users", env: {}) }
   let(:controller_class) { double(name: "UsersController") }
+  let(:action_name) { "index" }
   let(:controller) do
-    double(request:, headers: {}, action_name: "index", inertia_shared_data: nil, class: controller_class)
+    double(request:, headers: {}, action_name:, inertia_shared_data: nil, class: controller_class)
   end
 
   let(:context) { instance_double(Inertia::RequestContext) }
@@ -53,6 +54,20 @@ RSpec.describe Inertia::Renderer do
         { items: [] },
         context: context,
       )
+    end
+
+    context "with multi-word action name" do
+      let(:action_name) { "edit_profile" }
+
+      it "infers component name from controller and action" do
+        described_class.call({ user: "Jonathan" }, nil, controller:)
+
+        expect(Inertia::ProtocolBuilder).to have_received(:new).with(
+          "Users/EditProfile",
+          { user: "Jonathan" },
+          context: context,
+        )
+      end
     end
 
     it "raises when using inferred component with explicit props" do

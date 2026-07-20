@@ -37,7 +37,8 @@ module Inertia
 
         component_path = controller.class.name.delete_suffix("Controller")
         component_path.gsub!("::", "/")
-        component_name = controller.action_name.capitalize
+        action_name = controller.action_name
+        component_name = action_name.include?("_") ? action_name.split("_").map!(&:capitalize).join : action_name.capitalize
 
         component = "#{component_path}/#{component_name}"
       end
