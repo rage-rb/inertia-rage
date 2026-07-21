@@ -139,9 +139,12 @@ module Inertia
       # @param data [Hash] the Inertia page object
       # @return [String] HTML with page data script tag inserted after <body>
       def inject_page_data(layout, data)
+        json_data = data.to_json
+        json_data.gsub!("<", '\u003c') if json_data.include?("<")
+
         layout.sub "<body>", <<~HTML
           <body>
-            <script data-page="app" type="application/json">#{data.to_json}</script>
+            <script data-page="app" type="application/json">#{json_data}</script>
         HTML
       end
     end

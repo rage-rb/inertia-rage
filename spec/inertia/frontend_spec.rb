@@ -473,11 +473,21 @@ RSpec.describe Inertia::Frontend do
       html = '<html><body></body></html>'.dup
       allow(Net::HTTP).to receive(:get).and_return(html)
 
-      data = { props: { message: "Hello <script>alert('Hello')</script>" } }
+      data = { props: { message: "Hello world" } }
       result = described_class.render_layout(data)
 
       expect(result).to include('type="application/json"')
       expect(result).to include(data.to_json)
+    end
+
+    it "escapes HTML opening tags" do
+      html = '<html><body></body></html>'.dup
+      allow(Net::HTTP).to receive(:get).and_return(html)
+
+      data = { props: { message: "<script>alert('Hello')</script>" } }
+      result = described_class.render_layout(data)
+
+      expect(result).to include("\\u003cscript>alert('Hello')\\u003c/script>")
     end
 
     it "respects dev server configuration" do
