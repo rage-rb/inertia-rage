@@ -18,6 +18,10 @@ module Inertia
     OMIT = Object.new
     private_constant :OMIT
 
+    # Page props should contain an `errors` object that defaults to {}
+    EMPTY_ERRORS = {}.freeze
+    private_constant :EMPTY_ERRORS
+
     # Creates a new protocol builder.
     #
     # @param component [String] the Inertia component name being rendered
@@ -34,7 +38,10 @@ module Inertia
     #
     # @return [Hash] the Inertia page object payload
     def call
-      @response[:props] = resolve_props
+      props = resolve_props
+      props[:errors] = EMPTY_ERRORS unless props.has_key?(:errors)
+
+      @response[:props] = props
       @response[:deferredProps] = @deferred_props_metadata if @deferred_props_metadata
       @response[:onceProps] = @once_props_metadata if @once_props_metadata
 

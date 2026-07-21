@@ -24,6 +24,7 @@ module Inertia
       end
 
       # Returns the props with symbolized keys.
+      # @note To comply with the Inertia protocol, props always include the `errors` object.
       #
       # @return [Hash{Symbol => Object}] the props hash
       def props

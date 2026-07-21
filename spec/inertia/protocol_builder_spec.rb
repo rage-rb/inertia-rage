@@ -22,7 +22,7 @@ RSpec.describe Inertia::ProtocolBuilder do
         component: "TestComponent",
         url: "/users?active=true",
         version: nil,
-        props: { name: "Jonathan" },
+        props: { name: "Jonathan", errors: {} },
       )
     end
 
@@ -54,6 +54,7 @@ RSpec.describe Inertia::ProtocolBuilder do
       expect(page[:props]).to eq(
         name: "Jonathan",
         sport: "hockey",
+        errors: {}
       )
     end
   end
@@ -73,6 +74,7 @@ RSpec.describe Inertia::ProtocolBuilder do
       expect(page[:props]).to eq(
         auth: { user: "Jonathan" },
         nested: { sport: "hockey" },
+        errors: {}
       )
     end
 
@@ -99,6 +101,7 @@ RSpec.describe Inertia::ProtocolBuilder do
       expect(page[:props]).to eq(
         sport: "basketball",
         level: "worse than he believes",
+        errors: {}
       )
       expect(grit_resolved).to be(false)
     end
@@ -130,6 +133,7 @@ RSpec.describe Inertia::ProtocolBuilder do
             second: "second evaluated nested param",
           },
         },
+        errors: {}
       )
     end
 
@@ -156,6 +160,7 @@ RSpec.describe Inertia::ProtocolBuilder do
           permissions: ["admin"],
           notifications: ["msg"],
         },
+        errors: {}
       )
       expect(page).not_to have_key(:deferredProps)
     end
@@ -189,6 +194,7 @@ RSpec.describe Inertia::ProtocolBuilder do
             second: "second evaluated nested param",
           },
         },
+        errors: {}
       )
     end
 
@@ -245,6 +251,7 @@ RSpec.describe Inertia::ProtocolBuilder do
         nested: {
           second: "second nested param",
         },
+        errors: {}
       )
     end
 
@@ -279,6 +286,7 @@ RSpec.describe Inertia::ProtocolBuilder do
             what_about_empty_hash: {},
           },
         },
+        errors: {}
       )
     end
   end
@@ -288,7 +296,7 @@ RSpec.describe Inertia::ProtocolBuilder do
     it "preserves plain scalar arrays" do
       page = build_page({ tags: ["ruby", "rails", false, nil, {}] })
 
-      expect(page[:props]).to eq(tags: ["ruby", "rails", false, nil, {}])
+      expect(page[:props]).to eq(tags: ["ruby", "rails", false, nil, {}], errors: {})
     end
 
     it "resolves lazy values inside array hash items" do
@@ -299,6 +307,7 @@ RSpec.describe Inertia::ProtocolBuilder do
           { name: "First" },
           "plain",
         ],
+        errors: {}
       )
     end
 
@@ -330,6 +339,7 @@ RSpec.describe Inertia::ProtocolBuilder do
           { foo: "bar-1" },
           { foo: "bar-2" },
         ],
+        errors: {}
       )
       expect(resolved).to be(false)
     end
@@ -392,7 +402,7 @@ RSpec.describe Inertia::ProtocolBuilder do
         },
       )
 
-      expect(page[:props]).to eq(foos: [])
+      expect(page[:props]).to eq(foos: [], errors: {})
     end
 
     # Adapted from inertia-rails/spec/inertia/props_resolver_spec.rb closure-returned array cases.
@@ -427,6 +437,7 @@ RSpec.describe Inertia::ProtocolBuilder do
             },
           },
         ],
+        errors: {}
       )
     end
 
@@ -449,7 +460,7 @@ RSpec.describe Inertia::ProtocolBuilder do
         },
       )
 
-      expect(page[:props]).to eq(foos: [{ name: "First" }])
+      expect(page[:props]).to eq(foos: [{ name: "First" }], errors: {})
       expect(page[:deferredProps]).to eq("default" => ["foos.0.notifications"])
       expect(resolved).to be(false)
     end
@@ -470,7 +481,7 @@ RSpec.describe Inertia::ProtocolBuilder do
         },
       )
 
-      expect(page[:props]).to eq(user: "Jonathan")
+      expect(page[:props]).to eq(user: "Jonathan", errors: {})
       expect(resolved).to be(false)
     end
 
@@ -486,7 +497,7 @@ RSpec.describe Inertia::ProtocolBuilder do
         },
       )
 
-      expect(page[:props].keys).to eq([:permissions])
+      expect(page[:props].keys).to match_array([:permissions, :errors])
       expect(page[:props][:permissions]).to eq(["admin"])
     end
 
@@ -506,7 +517,7 @@ RSpec.describe Inertia::ProtocolBuilder do
         },
       )
 
-      expect(page[:props]).to eq(user: "Jonathan")
+      expect(page[:props]).to eq(user: "Jonathan", errors: {})
       expect(resolved).to be(false)
     end
 
@@ -550,7 +561,7 @@ RSpec.describe Inertia::ProtocolBuilder do
         },
       )
 
-      expect(page[:props]).to eq(name: "Jonathan")
+      expect(page[:props]).to eq(name: "Jonathan", errors: {})
       expect(page[:deferredProps]).to eq("default" => ["notifications"])
       expect(resolved).to be(false)
     end
@@ -571,7 +582,7 @@ RSpec.describe Inertia::ProtocolBuilder do
         },
       )
 
-      expect(page[:props]).to eq(name: "Jonathan")
+      expect(page[:props]).to eq(name: "Jonathan", errors: {})
       expect(page[:deferredProps]).to eq("default" => ["notifications"])
       expect(resolved).to be(false)
     end
@@ -584,7 +595,7 @@ RSpec.describe Inertia::ProtocolBuilder do
         },
       )
 
-      expect(page[:props]).to eq({})
+      expect(page[:props]).to eq({ errors: {} })
       expect(page[:deferredProps]).to eq(
         "sidebar" => ["sport"],
         "default" => ["level"],
@@ -602,7 +613,7 @@ RSpec.describe Inertia::ProtocolBuilder do
         },
       )
 
-      expect(page[:props]).to eq({})
+      expect(page[:props]).to eq({ errors: {} })
       expect(page[:deferredProps]).to eq("alerts" => ["app.auth.notifications"])
     end
 
@@ -649,7 +660,7 @@ RSpec.describe Inertia::ProtocolBuilder do
         },
       )
 
-      expect(page[:props]).to eq(auth: { user: "Jonathan" })
+      expect(page[:props]).to eq(auth: { user: "Jonathan" }, errors: {})
       expect(page[:deferredProps]).to eq("default" => ["auth.notifications", "auth.roles"])
       expect(notifications_resolved).to be(false)
       expect(roles_resolved).to be(false)
@@ -725,7 +736,7 @@ RSpec.describe Inertia::ProtocolBuilder do
         },
       )
 
-      expect(page[:props]).to eq(regular: "regular prop")
+      expect(page[:props]).to eq(regular: "regular prop", errors: {})
       expect(page[:onceProps]).to eq(
         "cached_data" => { prop: "cached_data", expiresAt: nil },
       )
@@ -742,7 +753,7 @@ RSpec.describe Inertia::ProtocolBuilder do
         },
       )
 
-      expect(page[:props]).to eq(regular: "regular prop")
+      expect(page[:props]).to eq(regular: "regular prop", errors: {})
       expect(page[:onceProps]).to eq(
         "my_custom_key" => { prop: "cached_data", expiresAt: nil },
       )
@@ -761,7 +772,7 @@ RSpec.describe Inertia::ProtocolBuilder do
         },
       )
 
-      expect(page[:props].keys).to eq([:cached_data])
+      expect(page[:props].keys).to match_array([:cached_data, :errors])
       expect(page[:props][:cached_data]).to eq("expensive data")
       expect(page[:onceProps]).to eq(
         "cached_data" => { prop: "cached_data", expiresAt: nil },
@@ -781,7 +792,7 @@ RSpec.describe Inertia::ProtocolBuilder do
         },
       )
 
-      expect(page[:props].keys).to eq([:cached_one])
+      expect(page[:props].keys).to match_array([:cached_one, :errors])
       expect(page[:onceProps]).to eq(
         "cached_one" => { prop: "cached_one", expiresAt: nil },
       )
@@ -809,6 +820,7 @@ RSpec.describe Inertia::ProtocolBuilder do
           summary: "ready",
           cached: "cached data",
         },
+        errors: {}
       )
       expect(page).not_to have_key(:onceProps)
     end
@@ -834,6 +846,7 @@ RSpec.describe Inertia::ProtocolBuilder do
         dashboard: {
           summary: "ready",
         },
+        errors: {}
       )
       expect(page).not_to have_key(:onceProps)
     end
@@ -876,6 +889,20 @@ RSpec.describe Inertia::ProtocolBuilder do
         "fresh_data" => { prop: "fresh_data", expiresAt: nil },
         "stale_data" => { prop: "stale_data", expiresAt: nil },
       )
+    end
+  end
+
+  describe "errors" do
+    it "includes the errors object" do
+      page = build_page({ name: "Jonathan" })
+
+      expect(page[:props][:errors]).to eq({})
+    end
+
+    it "doesn't overwrite user-submitted errors" do
+      page = build_page({ errors: { name: "is required" } })
+
+      expect(page[:props][:errors]).to eq({ name: "is required" })
     end
   end
 end

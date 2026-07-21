@@ -75,7 +75,8 @@ RSpec.describe "Inertia::RSpec", type: :request do
       get "/"
       expect(inertia.props).to eq({
         users: [{ id: 1, name: "John" }, { id: 2, name: "Jane" }],
-        meta: { total: 2 }
+        meta: { total: 2 },
+        errors: {}
       })
     end
 
@@ -112,14 +113,14 @@ RSpec.describe "Inertia::RSpec", type: :request do
       it "requests only specified props" do
         get "/users/1", inertia: { only: :user }
 
-        expect(inertia.props.keys).to eq([:user])
+        expect(inertia.props.keys).to contain_exactly(:user, :errors)
         expect(inertia.props[:user]).to eq({ id: 1, name: "John", email: "john@example.com" })
       end
 
       it "requests multiple props with array" do
         get "/users/1", inertia: { only: [:user, :permissions] }
 
-        expect(inertia.props.keys).to contain_exactly(:user, :permissions)
+        expect(inertia.props.keys).to contain_exactly(:user, :permissions, :errors)
         expect(inertia.props[:permissions]).to eq(%w[read write])
       end
 
@@ -127,7 +128,7 @@ RSpec.describe "Inertia::RSpec", type: :request do
         get "/users/1"
         get "/users/1", inertia: { only: :user }
 
-        expect(inertia.props.keys).to eq([:user])
+        expect(inertia.props.keys).to contain_exactly(:user, :errors)
       end
     end
 
@@ -135,20 +136,20 @@ RSpec.describe "Inertia::RSpec", type: :request do
       it "excludes specified props" do
         get "/", inertia: { except: :meta }
 
-        expect(inertia.props.keys).to eq([:users])
+        expect(inertia.props.keys).to contain_exactly(:users, :errors)
       end
 
       it "excludes multiple props with array" do
         get "/users/1", inertia: { except: [:permissions, :activity] }
 
-        expect(inertia.props.keys).to eq([:user])
+        expect(inertia.props.keys).to contain_exactly(:user, :errors)
       end
     end
 
     context "loading deferred props" do
       it "loads deferred props when explicitly requested" do
         get "/users/1"
-        expect(inertia.props.keys).to eq([:user])
+        expect(inertia.props.keys).to contain_exactly(:user, :errors)
         expect(inertia.deferred_props).to eq({ "default" => ["activity"] })
 
         get "/users/1", inertia: { only: :activity }
