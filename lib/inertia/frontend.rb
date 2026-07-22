@@ -105,7 +105,14 @@ module Inertia
         config = Inertia.config.dev_server
         dev_server_url = "http://#{config.host}:#{config.port}"
 
-        layout = Net::HTTP.get(URI(dev_server_url))
+        retries = 0
+        begin
+          layout = Net::HTTP.get(URI(dev_server_url))
+        rescue Errno::ECONNREFUSED, Errno::EBADF
+          raise if (retries += 1) > 5
+          sleep 0.2
+          retry
+        end
 
         layout.gsub!(/(src|href)=(["'])\/([^"']+)\2/) do
           "#{$1}=\"#{dev_server_url}/#{$3}\""
