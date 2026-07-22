@@ -357,6 +357,17 @@ RSpec.describe Inertia::Frontend do
 
         expect(result).to include('src="https://cdn.example.com/lib.js"')
       end
+
+      it "body tags with attributes" do
+        html = '<html><body class="min-h-screen" data-theme="light"></body></html>'.dup
+        allow(Net::HTTP).to receive(:get).with(URI("http://localhost:5173")).and_return(html)
+
+        result = described_class.render_layout(page_data)
+
+        expect(result).to include('<script data-page="app" type="application/json">')
+        expect(result).to include('"component":"Home"')
+        expect(result).to include('"user":"Jonathan"')
+      end
     end
 
     context "in production" do

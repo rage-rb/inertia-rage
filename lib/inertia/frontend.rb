@@ -149,10 +149,12 @@ module Inertia
         json_data = data.to_json
         json_data.gsub!("<", '\u003c') if json_data.include?("<")
 
-        layout.sub "<body>", <<~HTML
-          <body>
-            <script data-page="app" type="application/json">#{json_data}</script>
-        HTML
+        layout.sub(/<body([^>]*)>/i) do |body_tag|
+          <<~HTML
+            #{body_tag}
+              <script data-page="app" type="application/json">#{json_data}</script>
+          HTML
+        end
       end
     end
   end
