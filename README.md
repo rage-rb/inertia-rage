@@ -1,4 +1,4 @@
-<p align="center"><img height="200" alt="logo" src="https://github.com/user-attachments/assets/d010d189-5f54-43cc-a07a-248109248b59" /></p>
+<p align="center"><img height="200" alt="logo" src="https://github.com/user-attachments/assets/470e237b-f947-47f1-882c-1b7191709f50" /></p>
 
 # Inertia Rage
 
