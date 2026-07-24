@@ -94,12 +94,14 @@ module Inertia
       #
       # @example Request all props except some
       #   get "/users/1", inertia: { except: :audit_log }
-      def get(*, inertia: {}, headers: {}, **)
-        if inertia.except(:only, :except).any?
-          raise ArgumentError, "Unknown :inertia option. Supported values are :only and :except"
-        end
+      def get(*, inertia: nil, headers: {}, **)
+        if inertia
+          inertia = {} unless inertia.is_a?(Hash)
 
-        if inertia.any?
+          if inertia.except(:only, :except).any?
+            raise ArgumentError, "Unknown :inertia option. Supported values are :only and :except"
+          end
+
           headers = headers.merge({
             "X-Inertia" => "true",
             "X-Inertia-Partial-Component" => self.inertia&.component || double(:== => true)

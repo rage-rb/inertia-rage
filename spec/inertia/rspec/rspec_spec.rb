@@ -71,6 +71,18 @@ RSpec.describe "Inertia::RSpec", type: :request do
       expect(inertia.component).to eq("Users/Index")
     end
 
+    it "returns an HTML response" do
+      get "/"
+      expect(response["content-type"]).to start_with("text/html")
+    end
+
+    context "with inertia request" do
+      it "returns a JSON response" do
+        get "/", inertia: true
+        expect(response["content-type"]).to start_with("application/json")
+      end
+    end
+
     it "returns props with symbolized keys" do
       get "/"
       expect(inertia.props).to eq({
