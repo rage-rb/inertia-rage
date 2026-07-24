@@ -31,7 +31,7 @@ module Inertia
       request, headers = controller.request, controller.headers
 
       unless component.is_a?(String)
-        raise ArgumentError, "props must be nil when using inferred component names" if props
+        raise ArgumentError, "props must be nil when using inferred component names" if props&.any?
 
         props = component
 

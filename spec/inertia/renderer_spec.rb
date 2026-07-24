@@ -76,6 +76,16 @@ RSpec.describe Inertia::Renderer do
         described_class.call({ user: "Jonathan" }, { extra: "data" }, controller:)
       }.to raise_error(ArgumentError, "props must be nil when using inferred component names")
     end
+
+    it "doesn't raise when using inferred component with empty props" do
+      described_class.call({ user: "Jonathan" }, {}, controller:)
+
+      expect(Inertia::ProtocolBuilder).to have_received(:new).with(
+        "Users/Index",
+        { user: "Jonathan" },
+        context: context,
+      )
+    end
   end
 
   describe "RequestContext" do
