@@ -7,7 +7,6 @@ require_relative "frontend"
 require_relative "renderer"
 require_relative "request_context"
 require_relative "protocol_builder"
-require_relative "controller_helpers"
 require_relative "configuration"
 require_relative "middleware/version"
 require_relative "middleware/assets"
@@ -84,4 +83,8 @@ module Inertia
   # @!endgroup
 
   autoload :ViteDevServer, "inertia/vite_dev_server"
+end
+
+module RageController
+  autoload :Inertia, "inertia/rage_controller/inertia"
 end

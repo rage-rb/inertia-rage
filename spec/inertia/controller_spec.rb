@@ -2,13 +2,8 @@
 
 require "spec_helper"
 
-RSpec.describe Inertia::ControllerHelpers do
-  let(:controller_class) do
-    Class.new(RageController::API) do
-      include Inertia::ControllerHelpers
-      extend Inertia::ControllerHelpers::ClassMethods
-    end
-  end
+RSpec.describe RageController::Inertia do
+  let(:controller_class) { Class.new(described_class) }
 
   let(:controller) { controller_class.new(nil, nil) }
 

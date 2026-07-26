@@ -8,12 +8,23 @@ This gem handles Inertia page responses, provides flexible prop types, and integ
 
 ## Usage
 
+### Server-side setup
+
 Create a Rage app and add the gem:
 
 ```
 rage new my-app -d postgresql
 bundle add inertia-rage
 ```
+
+Update the parent controller in your `ApplicationController` from `RageController::API` to `RageController::Inertia` to get access to CSRF protection and redirect helpers:
+
+```ruby
+class ApplicationController < RageController::Inertia
+end
+```
+
+### Client-side setup
 
 Create a frontend project in any directory within your project's root or `app` folder:
 
@@ -202,7 +213,7 @@ See the [API documentation](https://inertia-api.rage-rb.dev/Inertia/Configuratio
 ## Learn More
 
 - [Props API Reference](https://inertia-api.rage-rb.dev/Inertia)
-- [Controller API Reference](https://inertia-api.rage-rb.dev/Inertia/ControllerHelpers.html)
+- [Controller API Reference](https://inertia-api.rage-rb.dev/Inertia/ControllerHelpers.html) TODO
 - [Configuration API Reference](https://inertia-api.rage-rb.dev/Inertia/Configuration.html)
 
 ## Contributing

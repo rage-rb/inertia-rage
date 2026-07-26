@@ -30,12 +30,6 @@ module Inertia
       config.middleware.use Middleware::Version
     end
 
-    # Include ControllerHelpers to add support for `redirect_to` and other Inertia-specific methods
-    initializer "inertia.rage.controller_helpers" do
-      RageController::API.include ControllerHelpers
-      RageController::API.extend ControllerHelpers::ClassMethods
-    end
-
     # Prebuild frontend assets before launching the server in production
     before_server_start do
       if Inertia.config.build_on_start?

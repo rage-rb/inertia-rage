@@ -2,11 +2,9 @@
 
 require "uri"
 
-module Inertia
-  ##
-  # Provides controller helper methods for Inertia.js integration.
-  module ControllerHelpers
-    module ClassMethods
+module RageController
+  class Inertia < RageController::API
+    class << self
       # Shares data with all Inertia responses in a controller.
       #
       # This method registers a before_action that evaluates the given block
@@ -22,7 +20,7 @@ module Inertia
       # @yieldreturn [Hash] the data to merge into the shared props
       #
       # @example Share data for all actions
-      #   class ApplicationController < RageController::API
+      #   class ApplicationController < RageController::Inertia
       #     inertia_share do
       #       { current_user: current_user&.as_json }
       #     end
@@ -56,6 +54,10 @@ module Inertia
         end
       end
     end
+
+    # @private
+    attr_accessor :inertia_shared_data
+    before_action :protect_from_csrf
 
     # Redirects the client to the specified location.
     #
@@ -112,12 +114,6 @@ module Inertia
       else
         redirect_to fallback_location, external:
       end
-    end
-
-    # @private
-    def self.included(klass)
-      klass.before_action :protect_from_csrf
-      klass.attr_accessor :inertia_shared_data
     end
 
     private

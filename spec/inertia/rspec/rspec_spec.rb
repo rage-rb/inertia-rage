@@ -1,9 +1,7 @@
 # frozen_string_literal: true
 
 module RspecSpecHelpers
-  class TestController < RageController::API
-    include Inertia::ControllerHelpers
-
+  class TestController < RageController::Inertia
     def index
       render inertia: "Users/Index", props: {
         "users" => [{ "id" => 1, "name" => "John" }, { "id" => 2, "name" => "Jane" }],
