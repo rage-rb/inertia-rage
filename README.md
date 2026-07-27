@@ -213,7 +213,7 @@ See the [API documentation](https://inertia-api.rage-rb.dev/Inertia/Configuratio
 ## Learn More
 
 - [Props API Reference](https://inertia-api.rage-rb.dev/Inertia)
-- [Controller API Reference](https://inertia-api.rage-rb.dev/Inertia/ControllerHelpers.html) TODO
+- [Controller API Reference](https://inertia-api.rage-rb.dev/RageController/Inertia.html)
 - [Configuration API Reference](https://inertia-api.rage-rb.dev/Inertia/Configuration.html)
 
 ## Contributing
