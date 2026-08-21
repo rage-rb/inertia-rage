@@ -83,6 +83,11 @@ module Inertia
   # @!endgroup
 
   autoload :ViteDevServer, "inertia/vite_dev_server"
+
+  module SSR
+    autoload :Client, "inertia/ssr/client"
+    autoload :Server, "inertia/ssr/server"
+  end
 end
 
 module RageController

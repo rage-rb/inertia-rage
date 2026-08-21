@@ -90,6 +90,13 @@ module Inertia
       @dev_server ||= DevServer.new
     end
 
+    # Returns the SSR configuration.
+    #
+    # @return [Ssr] the SSR configuration object
+    def ssr
+      @ssr ||= Ssr.new
+    end
+
     ##
     # Stores configuration for the Vite development server.
     #
@@ -104,6 +111,40 @@ module Inertia
       def initialize
         @host = "localhost"
         @port = 5173
+      end
+    end
+
+    ##
+    # Stores configuration for server-side rendering.
+    #
+    class Ssr
+      # @return [Boolean] whether SSR is enabled
+      attr_accessor :enabled
+
+      # @return [String] the URL of the SSR server (default: `http://localhost:13714`)
+      attr_accessor :url
+
+      # @return [Pathname, nil] the path to the SSR build output
+      attr_accessor :build_path
+
+      # @private
+      def initialize
+        @url = "http://localhost:13714"
+      end
+
+      # Sets the path where SSR bundle is located.
+      #
+      # When set, this overrides the default `ssr` directory inside {Frontend.dist}.
+      # The path should be relative to the application root.
+      #
+      # @param path [String] path relative to the application root
+      # @raise [ArgumentError] if path resolves to the public directory root
+      def build_path=(path)
+        @build_path = Rage.root.join(path)
+
+        if @build_path == Rage.root.join("public")
+          raise ArgumentError, "ssr.build_path cannot be set to public/; use a nested directory instead, e.g., public/ssr"
+        end
       end
     end
   end

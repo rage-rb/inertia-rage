@@ -8,17 +8,21 @@ RSpec.describe Inertia::Frontend do
   around do |example|
     described_class.instance_variable_set(:@root, nil)
     described_class.instance_variable_set(:@dist, nil)
+    described_class.instance_variable_set(:@ssr_dist, nil)
     described_class.instance_variable_set(:@version, nil)
     described_class.instance_variable_set(:@package_runner, nil)
-    described_class.instance_variable_set(:@layout, nil)
+    described_class.instance_variable_set(:@runtime, nil)
+    described_class.instance_variable_set(:@static_layout, nil)
 
     example.run
 
     described_class.instance_variable_set(:@root, nil)
     described_class.instance_variable_set(:@dist, nil)
+    described_class.instance_variable_set(:@ssr_dist, nil)
     described_class.instance_variable_set(:@version, nil)
     described_class.instance_variable_set(:@package_runner, nil)
-    described_class.instance_variable_set(:@layout, nil)
+    described_class.instance_variable_set(:@runtime, nil)
+    described_class.instance_variable_set(:@static_layout, nil)
   end
 
   describe ".root" do
@@ -129,6 +133,29 @@ RSpec.describe Inertia::Frontend do
 
       it "returns configured root path" do
         expect(described_class.dist).to eq(:custom_build_path)
+      end
+    end
+  end
+
+  describe ".ssr_dist" do
+    let(:dist) { double }
+
+    before do
+      allow(described_class).to receive(:dist).and_return(dist)
+    end
+
+    it "returns the default ssr directory inside dist" do
+      expect(dist).to receive(:join).with("ssr").and_return(:default_ssr_path)
+      expect(described_class.ssr_dist).to eq(:default_ssr_path)
+    end
+
+    context "with custom ssr config" do
+      before do
+        allow(Inertia.config.ssr).to receive(:build_path).and_return(:custom_ssr_path)
+      end
+
+      it "returns configured ssr path" do
+        expect(described_class.ssr_dist).to eq(:custom_ssr_path)
       end
     end
   end
@@ -270,6 +297,76 @@ RSpec.describe Inertia::Frontend do
 
         result1 = described_class.package_runner
         result2 = described_class.package_runner
+
+        expect(result1).to equal(result2)
+      end
+    end
+  end
+
+  describe ".runtime" do
+    def setup_frontend_with_lockfile(root, lockfile)
+      frontend = root.join("frontend")
+      frontend.mkpath
+      frontend.join("vite.config.js").write("")
+      frontend.join(lockfile).write("") if lockfile
+      allow(Rage).to receive(:root).and_return(root)
+    end
+
+    it "returns 'node' for npm (package-lock.json)" do
+      Dir.mktmpdir do |dir|
+        setup_frontend_with_lockfile(Pathname.new(dir), "package-lock.json")
+        expect(described_class.runtime).to eq("node")
+      end
+    end
+
+    it "returns 'node' for pnpm (pnpm-lock.yaml)" do
+      Dir.mktmpdir do |dir|
+        setup_frontend_with_lockfile(Pathname.new(dir), "pnpm-lock.yaml")
+        expect(described_class.runtime).to eq("node")
+      end
+    end
+
+    it "returns 'bun' for bun (bun.lockb)" do
+      Dir.mktmpdir do |dir|
+        setup_frontend_with_lockfile(Pathname.new(dir), "bun.lockb")
+        expect(described_class.runtime).to eq("bun")
+      end
+    end
+
+    it "returns 'bun' for bun (bun.lock)" do
+      Dir.mktmpdir do |dir|
+        setup_frontend_with_lockfile(Pathname.new(dir), "bun.lock")
+        expect(described_class.runtime).to eq("bun")
+      end
+    end
+
+    it "returns 'node' for yarn (yarn.lock)" do
+      Dir.mktmpdir do |dir|
+        setup_frontend_with_lockfile(Pathname.new(dir), "yarn.lock")
+        expect(described_class.runtime).to eq("node")
+      end
+    end
+
+    it "returns 'deno run' command for deno (deno.lock)" do
+      Dir.mktmpdir do |dir|
+        setup_frontend_with_lockfile(Pathname.new(dir), "deno.lock")
+        expect(described_class.runtime).to eq("deno run --allow-net --allow-env")
+      end
+    end
+
+    it "raises when no lock file is found" do
+      Dir.mktmpdir do |dir|
+        setup_frontend_with_lockfile(Pathname.new(dir), nil)
+        expect { described_class.runtime }.to raise_error(RuntimeError, /No supported JavaScript runtime detected/)
+      end
+    end
+
+    it "memoizes the result" do
+      Dir.mktmpdir do |dir|
+        setup_frontend_with_lockfile(Pathname.new(dir), "package-lock.json")
+
+        result1 = described_class.runtime
+        result2 = described_class.runtime
 
         expect(result1).to equal(result2)
       end
@@ -506,6 +603,139 @@ RSpec.describe Inertia::Frontend do
       expect(Net::HTTP).to receive(:get).with(URI("http://testhost:1234")).and_return(+"")
 
       described_class.render_layout({})
+    end
+  end
+
+  describe "SSR integration" do
+    let(:page_data) { { component: "Home", props: { user: "Jonathan" } } }
+
+    before do
+      allow(Rage).to receive(:env).and_return(double(development?: true))
+    end
+
+    context "when SSR is enabled" do
+      before do
+        allow(Inertia.config.ssr).to receive(:enabled).and_return(true)
+      end
+
+      it "uses SSR rendered content when available" do
+        html = '<html><head></head><body><div id="app"></div></body></html>'.dup
+        allow(Net::HTTP).to receive(:get).and_return(html)
+
+        ssr_response = {
+          "head" => ["<title>SSR Page</title>"],
+          "body" => '<div id="app" data-server-rendered="true"><h1>Hello from SSR</h1></div>'
+        }
+        allow(Inertia::SSR::Client).to receive(:render).with(page_data).and_return(ssr_response)
+
+        result = described_class.render_layout(page_data)
+
+        expect(result).to include("Hello from SSR")
+        expect(result).to include("data-server-rendered")
+        expect(result).to include("<title>SSR Page</title>")
+        expect(result).not_to include('data-page="app"')
+      end
+
+      it "replaces the app div with SSR body content" do
+        html = '<html><body><div id="app"></div></body></html>'.dup
+        allow(Net::HTTP).to receive(:get).and_return(html)
+
+        ssr_response = {
+          "head" => [],
+          "body" => '<div id="app"><span>Server Rendered</span></div>'
+        }
+        allow(Inertia::SSR::Client).to receive(:render).and_return(ssr_response)
+
+        result = described_class.render_layout(page_data)
+
+        expect(result).to include("<span>Server Rendered</span>")
+      end
+
+      it "injects head elements after the opening head tag" do
+        html = '<html><head><meta charset="utf-8"></head><body><div id="app"></div></body></html>'.dup
+        allow(Net::HTTP).to receive(:get).and_return(html)
+
+        ssr_response = {
+          "head" => ["<meta name=\"description\" content=\"SSR\">", "<link rel=\"canonical\" href=\"/\">"],
+          "body" => '<div id="app"></div>'
+        }
+        allow(Inertia::SSR::Client).to receive(:render).and_return(ssr_response)
+
+        result = described_class.render_layout(page_data)
+
+        expect(result).to include('<meta name="description" content="SSR">')
+        expect(result).to include('<link rel="canonical" href="/">')
+      end
+
+      it "falls back to client-side rendering when SSR fails" do
+        html = '<html><body><div id="app"></div></body></html>'.dup
+        logger = double("Logger")
+        allow(logger).to receive(:error)
+        allow(Net::HTTP).to receive(:get).and_return(html)
+        allow(Inertia::SSR::Client).to receive(:render).and_raise(StandardError.new("SSR server unavailable"))
+        allow(Rage).to receive(:logger).and_return(logger)
+        allow(Rage::Errors).to receive(:report)
+
+        result = described_class.render_layout(page_data)
+
+        expect(result).to include('data-page="app"')
+        expect(result).to include('"component":"Home"')
+      end
+
+      it "logs an error when SSR fails" do
+        html = '<html><body><div id="app"></div></body></html>'.dup
+        logger = double("Logger")
+        allow(Net::HTTP).to receive(:get).and_return(html)
+
+        error = StandardError.new("Connection refused")
+        allow(Inertia::SSR::Client).to receive(:render).and_raise(error)
+        allow(Rage).to receive(:logger).and_return(logger)
+        allow(Rage::Errors).to receive(:report)
+
+        expect(logger).to receive(:error).with("SSR render failed", exception: "Connection refused")
+
+        described_class.render_layout(page_data)
+      end
+
+      it "reports the error when SSR fails" do
+        html = '<html><body><div id="app"></div></body></html>'.dup
+        logger = double("Logger")
+        allow(logger).to receive(:error)
+        allow(Net::HTTP).to receive(:get).and_return(html)
+
+        error = StandardError.new("Connection refused")
+        allow(Inertia::SSR::Client).to receive(:render).and_raise(error)
+        allow(Rage).to receive(:logger).and_return(logger)
+
+        expect(Rage::Errors).to receive(:report).with(error)
+
+        described_class.render_layout(page_data)
+      end
+    end
+
+    context "when SSR is disabled" do
+      before do
+        allow(Inertia.config.ssr).to receive(:enabled).and_return(false)
+      end
+
+      it "uses client-side rendering" do
+        html = '<html><body><div id="app"></div></body></html>'.dup
+        allow(Net::HTTP).to receive(:get).and_return(html)
+
+        result = described_class.render_layout(page_data)
+
+        expect(result).to include('data-page="app"')
+        expect(result).to include('"component":"Home"')
+      end
+
+      it "does not call the SSR client" do
+        html = '<html><body><div id="app"></div></body></html>'.dup
+        allow(Net::HTTP).to receive(:get).and_return(html)
+
+        expect(Inertia::SSR::Client).not_to receive(:render)
+
+        described_class.render_layout(page_data)
+      end
     end
   end
 end
