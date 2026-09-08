@@ -187,6 +187,8 @@ module Inertia
         ssr_data = Inertia::SSR::Client.render(data)
 
         processed_layout = layout.sub(/<div\s[^>]*\bid=(["'])app\1[^>]*>\s*<\/div>/i) { ssr_data["body"] }
+        # the app container is not empty - fallback to CSR
+        return nil if processed_layout == layout
 
         if (head = ssr_data["head"]).any?
           processed_layout.sub!(/<head([^>]*)>/i) do |head_tag|

@@ -668,13 +668,30 @@ RSpec.describe Inertia::Frontend do
         expect(result).to include(%q(<code>\1 \&amp;</code>))
       end
 
+      it "keeps initial page data when the app div contains placeholder content" do
+        html = '<html><head></head><body><div id="app"><!-- mount --></div></body></html>'.dup
+        allow(Net::HTTP).to receive(:get).and_return(html)
+
+        page_script = %(<script data-page="app" type="application/json">#{page_data.to_json}</script>)
+        ssr_response = {
+          "head" => ["<title>SSR Page</title>"],
+          "body" => page_script + '<div id="app">Server Rendered</div>'
+        }
+        allow(Inertia::SSR::Client).to receive(:render).and_return(ssr_response)
+
+        result = described_class.render_layout(page_data)
+
+        expect(result).to include('data-page="app"')
+        expect(result).to include(page_data.to_json)
+      end
+
       it "injects head elements after the opening head tag" do
         html = '<html><head><meta charset="utf-8"></head><body><div id="app"></div></body></html>'.dup
         allow(Net::HTTP).to receive(:get).and_return(html)
 
         ssr_response = {
           "head" => ["<meta name=\"description\" content=\"SSR\">", "<link rel=\"canonical\" href=\"/\">"],
-          "body" => '<div id="app"></div>'
+          "body" => '<div id="app">Server Rendered</div>'
         }
         allow(Inertia::SSR::Client).to receive(:render).and_return(ssr_response)
 
