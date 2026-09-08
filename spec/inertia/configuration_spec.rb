@@ -160,4 +160,55 @@ RSpec.describe Inertia::Configuration::Ssr do
       end
     end
   end
+
+  describe "#local?" do
+    it "returns true for default localhost URL" do
+      expect(subject.local?).to be true
+    end
+
+    it "returns true for localhost" do
+      subject.url = "http://localhost:3000"
+      expect(subject.local?).to be true
+    end
+
+    it "returns true for localhost. (with trailing dot)" do
+      subject.url = "http://localhost.:3000"
+      expect(subject.local?).to be true
+    end
+
+    it "returns true for 0.0.0.0" do
+      subject.url = "http://0.0.0.0:13714"
+      expect(subject.local?).to be true
+    end
+
+    it "returns true for ::1 (IPv6 loopback)" do
+      subject.url = "http://[::1]:13714"
+      expect(subject.local?).to be true
+    end
+
+    it "returns true for 127.0.0.1" do
+      subject.url = "http://127.0.0.1:13714"
+      expect(subject.local?).to be true
+    end
+
+    it "returns true for any 127.x.x.x address" do
+      subject.url = "http://127.255.255.255:13714"
+      expect(subject.local?).to be true
+    end
+
+    it "is case insensitive" do
+      subject.url = "http://LOCALHOST:3000"
+      expect(subject.local?).to be true
+    end
+
+    it "returns false for remote hosts" do
+      subject.url = "http://ssr.example.com:3000"
+      expect(subject.local?).to be false
+    end
+
+    it "returns false for IP addresses outside 127.x.x.x range" do
+      subject.url = "http://192.168.1.1:3000"
+      expect(subject.local?).to be false
+    end
+  end
 end

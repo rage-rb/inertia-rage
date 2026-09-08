@@ -146,6 +146,12 @@ module Inertia
           raise ArgumentError, "ssr.build_path cannot be set to public/; use a nested directory instead, e.g., public/ssr"
         end
       end
+
+      # @private
+      def local?
+        normalized = URI(@url).hostname.downcase
+        %w[localhost localhost. 0.0.0.0 ::1].include?(normalized) || normalized.start_with?("127.")
+      end
     end
   end
 end

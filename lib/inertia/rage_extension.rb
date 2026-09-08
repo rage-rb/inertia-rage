@@ -17,7 +17,7 @@ module Inertia
 
       # Automatically start the SSR server
       after_initialize do
-        config.daemons << SSR::Server if Inertia.config.ssr.enabled && !Rage.env.development?
+        config.daemons << SSR::Server if Inertia.config.ssr.enabled && Inertia.config.ssr.local? && !Rage.env.development?
       end
 
       # In production, serve prebuilt static assets via the public file server and Assets middleware
@@ -43,8 +43,12 @@ module Inertia
         system("#{Frontend.package_runner} vite build", chdir: Frontend.root) || abort("ERROR: Frontend build failed")
 
         if Inertia.config.ssr.enabled
-          out_dir = Frontend.ssr_dist.relative_path_from(Frontend.root)
-          system("#{Frontend.package_runner} vite build --ssr --outDir #{out_dir}", chdir: Frontend.root) || abort("ERROR: SSR build failed")
+          if Inertia.config.ssr.local?
+            out_dir = Frontend.ssr_dist.relative_path_from(Frontend.root)
+            system("#{Frontend.package_runner} vite build --ssr --outDir #{out_dir}", chdir: Frontend.root) || abort("ERROR: SSR build failed")
+          else
+            puts "INFO: SSR server is remote - skipping SSR build"
+          end
         end
       end
     end
