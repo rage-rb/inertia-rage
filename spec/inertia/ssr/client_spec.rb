@@ -90,6 +90,14 @@ RSpec.describe Inertia::SSR::Client do
         expect(uri.to_s).to eq("http://localhost:13714/render")
       end
 
+      it "adds /render when the configured SSR URL has a trailing slash" do
+        allow(Inertia.config.ssr).to receive(:url).and_return("http://localhost:13714/")
+
+        uri = described_class.send(:uri)
+
+        expect(uri.to_s).to eq("http://localhost:13714/render")
+      end
+
       it "preserves custom path in SSR URL" do
         allow(Inertia.config.ssr).to receive(:url).and_return("http://ssr.example.com/custom/path")
 

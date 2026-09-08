@@ -48,7 +48,7 @@ module Inertia
             URI("http://#{dev_server_config.host}:#{dev_server_config.port}/__inertia_ssr")
           else
             uri = URI(Inertia.config.ssr.url)
-            uri.path = "/render" if uri.path.empty?
+            uri.path = "/render" if uri.path.empty? || uri.path == "/"
             uri
           end
         end
