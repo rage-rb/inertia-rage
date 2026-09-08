@@ -18,7 +18,7 @@ module Inertia
         # @return [Hash] parsed response containing "head" and "body" keys
         def render(data)
           response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: uri.scheme == "https", open_timeout: 1, read_timeout: 1) do |http|
-            http.post(uri.request_uri, data.to_json)
+            http.post(uri.request_uri, data.to_json, "Content-Type" => "application/json")
           end
 
           JSON.parse(response.body)

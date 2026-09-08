@@ -30,7 +30,7 @@ RSpec.describe Inertia::SSR::Client do
 
       allow(Net::HTTP).to receive(:start).and_yield(http)
 
-      expect(http).to receive(:post).with("/render", page_data.to_json).and_return(response)
+      expect(http).to receive(:post).with("/render", page_data.to_json, instance_of(Hash)).and_return(response)
 
       described_class.render(page_data)
     end
@@ -55,7 +55,7 @@ RSpec.describe Inertia::SSR::Client do
 
       allow(Net::HTTP).to receive(:start).and_yield(http)
 
-      expect(http).to receive(:post).with("/render?token=secret", page_data.to_json).and_return(response)
+      expect(http).to receive(:post).with("/render?token=secret", page_data.to_json, instance_of(Hash)).and_return(response)
 
       described_class.render(page_data)
     end
