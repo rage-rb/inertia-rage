@@ -28,7 +28,7 @@ module Inertia
         def connection
           return @connection if @connection
 
-          @connection = Net::HTTP.start(uri.host, uri.port, use_ssl: uri.scheme == "https")
+          @connection = Net::HTTP.start(uri.hostname, uri.port, use_ssl: uri.scheme == "https")
           @connection.open_timeout = @connection.read_timeout = 1
 
           at_exit { @connection&.finish }

@@ -152,5 +152,17 @@ RSpec.describe Inertia::SSR::Client do
 
       described_class.send(:connection)
     end
+
+    it "uses the unbracketed hostname for IPv6 URLs" do
+      allow(Inertia.config.ssr).to receive(:url).and_return("http://[::1]:13714")
+
+      http = instance_double(Net::HTTP)
+      allow(http).to receive(:open_timeout=)
+      allow(http).to receive(:read_timeout=)
+
+      expect(Net::HTTP).to receive(:start).with("::1", 13714, use_ssl: false).and_return(http)
+
+      described_class.send(:connection)
+    end
   end
 end
