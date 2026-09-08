@@ -186,7 +186,7 @@ module Inertia
       def inject_ssr_data(layout, data)
         ssr_data = Inertia::SSR::Client.render(data)
 
-        processed_layout = layout.sub(/<div\s[^>]*\bid=(["'])app\1[^>]*>\s*<\/div>/i, ssr_data["body"])
+        processed_layout = layout.sub(/<div\s[^>]*\bid=(["'])app\1[^>]*>\s*<\/div>/i) { ssr_data["body"] }
 
         if (head = ssr_data["head"]).any?
           processed_layout.sub!(/<head([^>]*)>/i) do |head_tag|

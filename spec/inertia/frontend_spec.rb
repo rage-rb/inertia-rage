@@ -651,6 +651,23 @@ RSpec.describe Inertia::Frontend do
         expect(result).to include("<span>Server Rendered</span>")
       end
 
+      it "preserves backslash sequences in SSR body content" do
+        html = '<html><body><div id="app"></div></body></html>'.dup
+        allow(Net::HTTP).to receive(:get).and_return(html)
+
+        page_script = '<script data-page="app" type="application/json">{}</script>'
+        rendered_body = %q(<div id="app"><code>\1 \&amp;</code></div>)
+        ssr_response = {
+          "head" => [],
+          "body" => page_script + rendered_body
+        }
+        allow(Inertia::SSR::Client).to receive(:render).and_return(ssr_response)
+
+        result = described_class.render_layout(page_data)
+
+        expect(result).to include(%q(<code>\1 \&amp;</code>))
+      end
+
       it "injects head elements after the opening head tag" do
         html = '<html><head><meta charset="utf-8"></head><body><div id="app"></div></body></html>'.dup
         allow(Net::HTTP).to receive(:get).and_return(html)
