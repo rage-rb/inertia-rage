@@ -88,6 +88,9 @@ module Inertia
     autoload :Client, "inertia/ssr/client"
     autoload :Server, "inertia/ssr/server"
   end
+
+  class SSRServerError < StandardError
+  end
 end
 
 module RageController

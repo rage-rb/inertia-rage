@@ -26,7 +26,7 @@ RSpec.describe Inertia::SSR::Client do
 
     it "sends page data as JSON to the SSR server" do
       http = instance_double(Net::HTTP)
-      response = instance_double(Net::HTTPResponse, body: ssr_response.to_json)
+      response = instance_double(Net::HTTPResponse, code: "200", body: ssr_response.to_json)
 
       allow(Net::HTTP).to receive(:start).and_yield(http)
 
@@ -37,7 +37,7 @@ RSpec.describe Inertia::SSR::Client do
 
     it "returns parsed JSON response" do
       http = instance_double(Net::HTTP)
-      response = instance_double(Net::HTTPResponse, body: ssr_response.to_json)
+      response = instance_double(Net::HTTPResponse, code: "200", body: ssr_response.to_json)
 
       allow(Net::HTTP).to receive(:start).and_yield(http)
       allow(http).to receive(:post).and_return(response)
@@ -51,7 +51,7 @@ RSpec.describe Inertia::SSR::Client do
       allow(Inertia.config.ssr).to receive(:url).and_return("https://ssr.example.com/render?token=secret")
 
       http = instance_double(Net::HTTP)
-      response = instance_double(Net::HTTPResponse, body: ssr_response.to_json)
+      response = instance_double(Net::HTTPResponse, code: "200", body: ssr_response.to_json)
 
       allow(Net::HTTP).to receive(:start).and_yield(http)
 
@@ -64,7 +64,7 @@ RSpec.describe Inertia::SSR::Client do
       allow(Inertia.config.ssr).to receive(:url).and_return("https://ssr.example.com")
 
       http = instance_double(Net::HTTP)
-      response = instance_double(Net::HTTPResponse, body: ssr_response.to_json)
+      response = instance_double(Net::HTTPResponse, code: "200", body: ssr_response.to_json)
       allow(http).to receive(:post).and_return(response)
 
       expect(Net::HTTP).to receive(:start).with("ssr.example.com", 443, use_ssl: true, open_timeout: 1, read_timeout: 1).and_yield(http)
@@ -76,12 +76,30 @@ RSpec.describe Inertia::SSR::Client do
       allow(Inertia.config.ssr).to receive(:url).and_return("http://[::1]:13714")
 
       http = instance_double(Net::HTTP)
-      response = instance_double(Net::HTTPResponse, body: ssr_response.to_json)
+      response = instance_double(Net::HTTPResponse, code: "200", body: ssr_response.to_json)
       allow(http).to receive(:post).and_return(response)
 
       expect(Net::HTTP).to receive(:start).with("::1", 13714, use_ssl: false, open_timeout: 1, read_timeout: 1).and_yield(http)
 
       described_class.render(page_data)
+    end
+
+    it "raises SSRServerError when the connection fails" do
+      allow(Net::HTTP).to receive(:start).and_raise(Errno::ECONNREFUSED)
+
+      expect { described_class.render(page_data) }.to raise_error(Inertia::SSRServerError)
+    end
+
+    it "raises SSRServerError when response status is not 200" do
+      http = instance_double(Net::HTTP)
+      response = instance_double(Net::HTTPResponse, code: "500", body: "Internal Server Error")
+
+      allow(Net::HTTP).to receive(:start).and_yield(http)
+      allow(http).to receive(:post).and_return(response)
+
+      expect { described_class.render(page_data) }.to raise_error(
+        Inertia::SSRServerError, "Request failed with status 500: Internal Server Error"
+      )
     end
   end
 

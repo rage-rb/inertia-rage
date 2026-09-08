@@ -17,8 +17,16 @@ module Inertia
         # @param data [Hash] the Inertia page object to render
         # @return [Hash] parsed response containing "head" and "body" keys
         def render(data)
-          response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: uri.scheme == "https", open_timeout: 1, read_timeout: 1) do |http|
-            http.post(uri.request_uri, data.to_json, "Content-Type" => "application/json")
+          response = begin
+            Net::HTTP.start(uri.hostname, uri.port, use_ssl: uri.scheme == "https", open_timeout: 1, read_timeout: 1) do |http|
+              http.post(uri.request_uri, data.to_json, "Content-Type" => "application/json")
+            end
+          rescue => e
+            raise Inertia::SSRServerError, e
+          end
+
+          unless response.code == "200"
+            raise Inertia::SSRServerError, "Request failed with status #{response.code}: #{response.body}"
           end
 
           JSON.parse(response.body)
