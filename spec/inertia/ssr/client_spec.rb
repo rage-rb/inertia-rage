@@ -52,6 +52,18 @@ RSpec.describe Inertia::SSR::Client do
 
       expect(result).to eq(ssr_response)
     end
+
+    it "includes the configured query string in the request target" do
+      allow(Inertia.config.ssr).to receive(:url).and_return("https://ssr.example.com/render?token=secret")
+
+      http = instance_double(Net::HTTP)
+      response = instance_double(Net::HTTPResponse, body: ssr_response.to_json)
+      allow(described_class).to receive(:connection).and_return(http)
+
+      expect(http).to receive(:post).with("/render?token=secret", page_data.to_json).and_return(response)
+
+      described_class.render(page_data)
+    end
   end
 
   describe "uri" do

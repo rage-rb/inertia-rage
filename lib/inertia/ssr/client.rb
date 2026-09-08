@@ -17,7 +17,7 @@ module Inertia
         # @param data [Hash] the Inertia page object to render
         # @return [Hash] parsed response containing "head" and "body" keys
         def render(data)
-           response = connection.post(uri.path, data.to_json)
+           response = connection.post(uri.request_uri, data.to_json)
            JSON.parse(response.body)
         end
 
