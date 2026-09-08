@@ -17,24 +17,14 @@ module Inertia
         # @param data [Hash] the Inertia page object to render
         # @return [Hash] parsed response containing "head" and "body" keys
         def render(data)
-           response = connection.post(uri.request_uri, data.to_json)
-           JSON.parse(response.body)
+          response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: uri.scheme == "https", open_timeout: 1, read_timeout: 1) do |http|
+            http.post(uri.request_uri, data.to_json)
+          end
+
+          JSON.parse(response.body)
         end
 
         private
-
-        # Returns a persistent HTTP connection to the SSR server.
-        # @return [Net::HTTP] the HTTP connection
-        def connection
-          return @connection if @connection
-
-          @connection = Net::HTTP.start(uri.hostname, uri.port, use_ssl: uri.scheme == "https")
-          @connection.open_timeout = @connection.read_timeout = 1
-
-          at_exit { @connection&.finish }
-
-          @connection
-        end
 
         # Returns the URI for the SSR endpoint.
         #

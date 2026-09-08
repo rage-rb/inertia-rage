@@ -4,12 +4,10 @@ require "spec_helper"
 
 RSpec.describe Inertia::SSR::Client do
   around do |example|
-    described_class.instance_variable_set(:@connection, nil)
     described_class.instance_variable_set(:@uri, nil)
 
     example.run
 
-    described_class.instance_variable_set(:@connection, nil)
     described_class.instance_variable_set(:@uri, nil)
   end
 
@@ -30,9 +28,7 @@ RSpec.describe Inertia::SSR::Client do
       http = instance_double(Net::HTTP)
       response = instance_double(Net::HTTPResponse, body: ssr_response.to_json)
 
-      allow(Net::HTTP).to receive(:start).and_return(http)
-      allow(http).to receive(:open_timeout=)
-      allow(http).to receive(:read_timeout=)
+      allow(Net::HTTP).to receive(:start).and_yield(http)
 
       expect(http).to receive(:post).with("/render", page_data.to_json).and_return(response)
 
@@ -43,9 +39,7 @@ RSpec.describe Inertia::SSR::Client do
       http = instance_double(Net::HTTP)
       response = instance_double(Net::HTTPResponse, body: ssr_response.to_json)
 
-      allow(Net::HTTP).to receive(:start).and_return(http)
-      allow(http).to receive(:open_timeout=)
-      allow(http).to receive(:read_timeout=)
+      allow(Net::HTTP).to receive(:start).and_yield(http)
       allow(http).to receive(:post).and_return(response)
 
       result = described_class.render(page_data)
@@ -58,9 +52,34 @@ RSpec.describe Inertia::SSR::Client do
 
       http = instance_double(Net::HTTP)
       response = instance_double(Net::HTTPResponse, body: ssr_response.to_json)
-      allow(described_class).to receive(:connection).and_return(http)
+
+      allow(Net::HTTP).to receive(:start).and_yield(http)
 
       expect(http).to receive(:post).with("/render?token=secret", page_data.to_json).and_return(response)
+
+      described_class.render(page_data)
+    end
+
+    it "uses SSL for https URLs" do
+      allow(Inertia.config.ssr).to receive(:url).and_return("https://ssr.example.com")
+
+      http = instance_double(Net::HTTP)
+      response = instance_double(Net::HTTPResponse, body: ssr_response.to_json)
+      allow(http).to receive(:post).and_return(response)
+
+      expect(Net::HTTP).to receive(:start).with("ssr.example.com", 443, use_ssl: true, open_timeout: 1, read_timeout: 1).and_yield(http)
+
+      described_class.render(page_data)
+    end
+
+    it "uses the unbracketed hostname for IPv6 URLs" do
+      allow(Inertia.config.ssr).to receive(:url).and_return("http://[::1]:13714")
+
+      http = instance_double(Net::HTTP)
+      response = instance_double(Net::HTTPResponse, body: ssr_response.to_json)
+      allow(http).to receive(:post).and_return(response)
+
+      expect(Net::HTTP).to receive(:start).with("::1", 13714, use_ssl: false, open_timeout: 1, read_timeout: 1).and_yield(http)
 
       described_class.render(page_data)
     end
@@ -128,61 +147,4 @@ RSpec.describe Inertia::SSR::Client do
     end
   end
 
-  describe "connection" do
-    before do
-      allow(Rage).to receive(:env).and_return(double(development?: false))
-      allow(Inertia.config.ssr).to receive(:url).and_return("http://localhost:13714")
-    end
-
-    it "creates a persistent HTTP connection" do
-      http = instance_double(Net::HTTP)
-
-      expect(Net::HTTP).to receive(:start).with("localhost", 13714, use_ssl: false).and_return(http)
-      expect(http).to receive(:open_timeout=).with(1)
-      expect(http).to receive(:read_timeout=).with(1)
-
-      described_class.send(:connection)
-    end
-
-    it "memoizes the connection" do
-      http = instance_double(Net::HTTP)
-      allow(Net::HTTP).to receive(:start).and_return(http)
-      allow(http).to receive(:open_timeout=)
-      allow(http).to receive(:read_timeout=)
-
-      conn1 = described_class.send(:connection)
-      conn2 = described_class.send(:connection)
-
-      expect(conn1).to equal(conn2)
-      expect(Net::HTTP).to have_received(:start).once
-    end
-
-    it "uses SSL for https URLs" do
-      allow(Inertia.config.ssr).to receive(:url).and_return("https://ssr.example.com")
-
-      # Reset memoized values
-      described_class.instance_variable_set(:@uri, nil)
-      described_class.instance_variable_set(:@connection, nil)
-
-      http = instance_double(Net::HTTP)
-      allow(http).to receive(:open_timeout=)
-      allow(http).to receive(:read_timeout=)
-
-      expect(Net::HTTP).to receive(:start).with("ssr.example.com", 443, use_ssl: true).and_return(http)
-
-      described_class.send(:connection)
-    end
-
-    it "uses the unbracketed hostname for IPv6 URLs" do
-      allow(Inertia.config.ssr).to receive(:url).and_return("http://[::1]:13714")
-
-      http = instance_double(Net::HTTP)
-      allow(http).to receive(:open_timeout=)
-      allow(http).to receive(:read_timeout=)
-
-      expect(Net::HTTP).to receive(:start).with("::1", 13714, use_ssl: false).and_return(http)
-
-      described_class.send(:connection)
-    end
-  end
 end
