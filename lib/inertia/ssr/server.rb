@@ -9,7 +9,7 @@ module Inertia
       def perform
         puts "INFO: Starting SSR server"
 
-        ssr_bundle = Frontend.ssr_dist.glob("*.js").first
+        ssr_bundle = Frontend.ssr_dist.glob("*.{js,mjs}").first
 
         unless ssr_bundle&.exist?
           Rage.logger.fatal("Could not start SSR server - bundle not found")

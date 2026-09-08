@@ -14,7 +14,7 @@ RSpec.describe Inertia::SSR::Server do
       ssr_dist = instance_double(Pathname)
       logger = double("Logger")
       allow(Inertia::Frontend).to receive(:ssr_dist).and_return(ssr_dist)
-      allow(ssr_dist).to receive(:glob).with("*.js").and_return([])
+      allow(ssr_dist).to receive(:glob).with("*.{js,mjs}").and_return([])
       allow(Rage).to receive(:logger).and_return(logger)
       allow(logger).to receive(:fatal)
 
@@ -36,7 +36,7 @@ RSpec.describe Inertia::SSR::Server do
       it "spawns the SSR server process using the detected runtime" do
         ssr_dist = instance_double(Pathname)
         allow(Inertia::Frontend).to receive(:ssr_dist).and_return(ssr_dist)
-        allow(ssr_dist).to receive(:glob).with("*.js").and_return([ssr_bundle])
+        allow(ssr_dist).to receive(:glob).with("*.{js,mjs}").and_return([ssr_bundle])
 
         expect(Process).to receive(:spawn).with(
           "node dist/ssr/ssr.js",
@@ -52,7 +52,7 @@ RSpec.describe Inertia::SSR::Server do
 
         ssr_dist = instance_double(Pathname)
         allow(Inertia::Frontend).to receive(:ssr_dist).and_return(ssr_dist)
-        allow(ssr_dist).to receive(:glob).with("*.js").and_return([ssr_bundle])
+        allow(ssr_dist).to receive(:glob).with("*.{js,mjs}").and_return([ssr_bundle])
 
         expect(Process).to receive(:spawn).with(
           "bun dist/ssr/ssr.js",
@@ -68,7 +68,7 @@ RSpec.describe Inertia::SSR::Server do
 
         ssr_dist = instance_double(Pathname)
         allow(Inertia::Frontend).to receive(:ssr_dist).and_return(ssr_dist)
-        allow(ssr_dist).to receive(:glob).with("*.js").and_return([ssr_bundle])
+        allow(ssr_dist).to receive(:glob).with("*.{js,mjs}").and_return([ssr_bundle])
 
         expect(Process).to receive(:spawn).with(
           "deno run --allow-net --allow-env dist/ssr/ssr.js",
@@ -90,7 +90,7 @@ RSpec.describe Inertia::SSR::Server do
       it "logs a fatal error and returns Stop" do
         ssr_dist = instance_double(Pathname)
         allow(Inertia::Frontend).to receive(:ssr_dist).and_return(ssr_dist)
-        allow(ssr_dist).to receive(:glob).with("*.js").and_return([])
+        allow(ssr_dist).to receive(:glob).with("*.{js,mjs}").and_return([])
 
         expect(logger).to receive(:fatal).with("Could not start SSR server - bundle not found")
 
@@ -101,7 +101,7 @@ RSpec.describe Inertia::SSR::Server do
       it "does not spawn any process" do
         ssr_dist = instance_double(Pathname)
         allow(Inertia::Frontend).to receive(:ssr_dist).and_return(ssr_dist)
-        allow(ssr_dist).to receive(:glob).with("*.js").and_return([])
+        allow(ssr_dist).to receive(:glob).with("*.{js,mjs}").and_return([])
         allow(logger).to receive(:fatal)
 
         expect(Process).not_to receive(:spawn)
@@ -113,7 +113,7 @@ RSpec.describe Inertia::SSR::Server do
         ssr_dist = instance_double(Pathname)
         ssr_bundle = instance_double(Pathname)
         allow(Inertia::Frontend).to receive(:ssr_dist).and_return(ssr_dist)
-        allow(ssr_dist).to receive(:glob).with("*.js").and_return([ssr_bundle])
+        allow(ssr_dist).to receive(:glob).with("*.{js,mjs}").and_return([ssr_bundle])
         allow(ssr_bundle).to receive(:exist?).and_return(false)
 
         expect(logger).to receive(:fatal).with("Could not start SSR server - bundle not found")
