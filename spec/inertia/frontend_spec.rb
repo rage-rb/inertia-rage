@@ -138,24 +138,53 @@ RSpec.describe Inertia::Frontend do
   end
 
   describe ".ssr_dist" do
-    let(:dist) { double }
-
-    before do
-      allow(described_class).to receive(:dist).and_return(dist)
-    end
-
     it "returns the default ssr directory inside dist" do
-      expect(dist).to receive(:join).with("ssr").and_return(:default_ssr_path)
-      expect(described_class.ssr_dist).to eq(:default_ssr_path)
+      Dir.mktmpdir do |dir|
+        root = Pathname.new(dir)
+        frontend = root.join("frontend")
+        frontend.mkpath
+        frontend.join("vite.config.js").write("")
+
+        allow(Rage).to receive(:root).and_return(root)
+
+        expect(described_class.ssr_dist).to eq(frontend.join("dist/ssr"))
+      end
     end
 
     context "with custom ssr config" do
-      before do
-        allow(Inertia.config.ssr).to receive(:build_path).and_return(:custom_ssr_path)
-      end
-
       it "returns configured ssr path" do
-        expect(described_class.ssr_dist).to eq(:custom_ssr_path)
+        Dir.mktmpdir do |dir|
+          root = Pathname.new(dir)
+          frontend = root.join("frontend")
+          frontend.mkpath
+          frontend.join("vite.config.js").write("")
+          custom_path = root.join("dist/ssr")
+
+          allow(Rage).to receive(:root).and_return(root)
+          allow(Inertia.config.ssr).to receive(:build_path).and_return(custom_path)
+
+          expect(described_class.ssr_dist).to eq(custom_path)
+        end
+      end
+    end
+
+    context "when dist is inside public/" do
+      it "raises when computed ssr path would be inside public/" do
+        Dir.mktmpdir do |dir|
+          root = Pathname.new(dir)
+          frontend = root.join("frontend")
+          frontend.mkpath
+          frontend.join("vite.config.js").write("")
+
+          public_build_path = root.join("public/dist")
+          allow(Rage).to receive(:root).and_return(root)
+          allow(Inertia.config).to receive(:build_path).and_return(public_build_path)
+
+          expect { described_class.ssr_dist }.to raise_error(
+            ArgumentError,
+            /SSR build path cannot be inside public\//
+          )
+        end
       end
     end
   end

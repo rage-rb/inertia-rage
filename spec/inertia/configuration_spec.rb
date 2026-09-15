@@ -142,9 +142,9 @@ RSpec.describe Inertia::Configuration::Ssr do
         root = Pathname.new(dir)
         allow(Rage).to receive(:root).and_return(root)
 
-        subject.build_path = "public/assets/ssr"
+        subject.build_path = "dist/ssr"
 
-        expect(subject.build_path).to eq(root.join("public/assets/ssr"))
+        expect(subject.build_path).to eq(root.join("dist/ssr"))
       end
     end
 
@@ -155,7 +155,19 @@ RSpec.describe Inertia::Configuration::Ssr do
 
         expect { subject.build_path = "public" }.to raise_error(
           ArgumentError,
-          /ssr.build_path cannot be set to public\/; use a nested directory instead/
+          /ssr.build_path cannot be inside public\//
+        )
+      end
+    end
+
+    it "raises when building into nested path inside public/" do
+      Dir.mktmpdir do |dir|
+        root = Pathname.new(dir)
+        allow(Rage).to receive(:root).and_return(root)
+
+        expect { subject.build_path = "public/assets/ssr" }.to raise_error(
+          ArgumentError,
+          /ssr.build_path cannot be inside public\//
         )
       end
     end

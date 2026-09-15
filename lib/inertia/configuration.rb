@@ -138,13 +138,16 @@ module Inertia
       # The path should be relative to the application root.
       #
       # @param path [String] path relative to the application root
-      # @raise [ArgumentError] if path resolves to the public directory root
+      # @raise [ArgumentError] if path resolves to the public directory
       def build_path=(path)
-        @build_path = Rage.root.join(path)
+        candidate_path = Rage.root.join(path)
+        public_path = Rage.root.join("public")
 
-        if @build_path == Rage.root.join("public")
-          raise ArgumentError, "ssr.build_path cannot be set to public/; use a nested directory instead, e.g., public/ssr"
+        if candidate_path.to_s.start_with?(public_path.to_s)
+          raise ArgumentError, "ssr.build_path cannot be inside public/"
         end
+
+        @build_path = candidate_path
       end
 
       # @private

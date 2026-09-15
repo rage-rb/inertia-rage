@@ -45,7 +45,16 @@ module Inertia
       # @return [Pathname] path to the build output directory
       # @raise [RuntimeError] if no Vite config file is found
       def ssr_dist
-        @ssr_dist ||= Inertia.config.ssr.build_path || dist.join("ssr")
+        @ssr_dist ||= begin
+          path = Inertia.config.ssr.build_path || dist.join("ssr")
+          public_path = Rage.root.join("public")
+
+          if path.to_s.start_with?(public_path.to_s)
+            raise ArgumentError, "SSR build path cannot be inside public/; configure it explicitly via config.ssr.build_path"
+          end
+
+          path
+        end
       end
 
       # Returns a version identifier for the frontend assets.
