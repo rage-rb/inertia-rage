@@ -1,9 +1,11 @@
 name: Docs
 
-on:
+on: 
   push:
-    tags:
-      - '*'
+    branches:
+      - main
+    paths:
+      - lib/inertia/version.rb
 
 jobs:
   build:
