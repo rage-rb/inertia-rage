@@ -37,6 +37,26 @@ module Inertia
         @dist ||= Inertia.config.build_path || root.join("dist")
       end
 
+      # Returns the directory containing built SSR assets.
+      #
+      # Uses {Configuration::Ssr#build_path} if set, otherwise defaults to
+      # `dist/ssr` inside the frontend root.
+      #
+      # @return [Pathname] path to the build output directory
+      # @raise [RuntimeError] if no Vite config file is found
+      def ssr_dist
+        @ssr_dist ||= begin
+          path = Inertia.config.ssr.build_path || dist.join("ssr")
+          public_path = Rage.root.join("public")
+
+          if path.to_s.start_with?(public_path.to_s)
+            raise ArgumentError, "SSR build path cannot be inside public/; configure it explicitly via config.ssr.build_path"
+          end
+
+          path
+        end
+      end
+
       # Returns a version identifier for the frontend assets.
       #
       # Computes an MD5 hash of the Vite manifest or index.html to detect
@@ -74,6 +94,29 @@ module Inertia
         end
 
         @package_runner
+      end
+
+      # Returns the JavaScript runtime command.
+      #
+      # Detects the runtime by checking for lock files and returns
+      # the appropriate command to execute scripts.
+      #
+      # @return [String] runtime command (e.g., "node", "bun", "deno run")
+      # @raise [RuntimeError] if no supported runtime is detected
+      def runtime
+        @runtime ||= if root.join("package-lock.json").exist?
+          "node"
+        elsif root.join("pnpm-lock.yaml").exist?
+          "node"
+        elsif root.join("bun.lockb").exist? || root.join("bun.lock").exist?
+          "bun"
+        elsif root.join("yarn.lock").exist?
+          "yarn node"
+        elsif root.join("deno.lock").exist?
+          "deno run --allow-net --allow-env"
+        else
+          raise "No supported JavaScript runtime detected"
+        end
       end
 
       # Renders the HTML layout with the Inertia page object embedded.
@@ -122,7 +165,7 @@ module Inertia
           "from \"#{dev_server_url}/#{$2}\""
         end
 
-        inject_page_data(layout, data)
+        hydrate_layout(layout, data)
       end
 
       # Returns the cached static layout with page data.
@@ -131,13 +174,46 @@ module Inertia
       # @return [String] HTML with page data injected
       # @raise [RuntimeError] if index.html does not exist in build path
       def build_static_layout(data)
-        @layout ||= begin
+        @static_layout ||= begin
           layout = dist.join("index.html")
           raise "Production layout not found at #{layout}. Ensure the frontend has been built" unless layout.exist?
           layout.read
         end
 
-        inject_page_data(@layout, data)
+        hydrate_layout(@static_layout, data)
+      end
+
+      def hydrate_layout(layout, data)
+        if Inertia.config.ssr.enabled
+          ssr_layout = inject_ssr_data(layout, data)
+          return ssr_layout if ssr_layout
+        end
+
+        inject_page_data(layout, data)
+      end
+
+      def inject_ssr_data(layout, data)
+        ssr_data = Inertia::SSR::Client.render(data)
+
+        processed_layout = layout.sub(/<div\s[^>]*\bid=(["'])app\1[^>]*>\s*<\/div>/i) { ssr_data["body"] }
+        # the app container is not empty - fallback to CSR
+        return nil if processed_layout == layout
+
+        if (head = ssr_data["head"]).any?
+          processed_layout.sub!(/<head([^>]*)>/i) do |head_tag|
+            <<~HTML
+              #{head_tag}
+                #{ssr_data["head"].join}
+            HTML
+          end
+        end
+
+        processed_layout
+
+      rescue => e
+        Rage.logger.error("SSR render failed", exception: e.message)
+        Rage::Errors.report(e)
+        nil
       end
 
       # Injects the page object JSON into the HTML body.
