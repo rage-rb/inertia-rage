@@ -372,7 +372,7 @@ RSpec.describe Inertia::Frontend do
     it "returns 'node' for yarn (yarn.lock)" do
       Dir.mktmpdir do |dir|
         setup_frontend_with_lockfile(Pathname.new(dir), "yarn.lock")
-        expect(described_class.runtime).to eq("node")
+        expect(described_class.runtime).to eq("yarn node")
       end
     end
 

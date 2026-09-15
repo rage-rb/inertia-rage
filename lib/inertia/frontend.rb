@@ -111,7 +111,7 @@ module Inertia
         elsif root.join("bun.lockb").exist? || root.join("bun.lock").exist?
           "bun"
         elsif root.join("yarn.lock").exist?
-          "node"
+          "yarn node"
         elsif root.join("deno.lock").exist?
           "deno run --allow-net --allow-env"
         else
